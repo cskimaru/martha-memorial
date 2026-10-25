@@ -12,3 +12,6 @@ deploy/generated/
 backups/
 build/
 *.egg-info/
+.coverage
+.coverage.*
+htmlcov/
