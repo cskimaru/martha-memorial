@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Join the family memorial{% endblock %}
+{% block meta %}<meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">{% endblock %}
+{% block body %}
+<main class="wrap dash">
+  <h1>Join Martha's memorial</h1>
+  <p class="notice" id="inv-loading">Checking your invitation…</p>
+  <p class="notice bad" id="inv-bad" hidden></p>
+  <form class="inline" id="accept-form" hidden novalidate>
+    <p>You've been invited as <strong id="inv-email"></strong>. Choose your name and a password to finish.</p>
+    <div class="field"><label for="a-name">Your name as the family knows you</label><input id="a-name" maxlength="120" required autocomplete="name"></div>
+    <div class="field"><label for="a-password">Password (at least 10 characters)</label><input id="a-password" type="password" minlength="10" required autocomplete="new-password"></div>
+    <div class="form-actions"><button class="btn" type="submit">Create my account</button><span class="err" id="a-err" role="alert"></span></div>
+  </form>
+</main>
+{% endblock %}
+{% block scripts %}<script src="/static/invite.js?v={{ asset_version }}" defer></script>{% endblock %}

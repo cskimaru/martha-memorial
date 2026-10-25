@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% set name = profile.full_name %}
+{% block title %}{{ name }}{% endblock %}
+{% block meta %}
+<meta name="description" content="In loving memory of {{ name }}. {{ profile.known_as }}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="In loving memory of {{ name }}">
+<meta property="og:description" content="{{ profile.epitaph or profile.known_as }}">
+<meta property="og:url" content="{{ site_origin }}/">
+{% if profile.portrait_media_id %}<meta property="og:image" content="{{ site_origin }}/api/media/{{ profile.portrait_media_id }}">{% endif %}
+{% endblock %}
+{% block body %}
+<header class="hero">
+  <div class="wrap">
+    <div class="topbar"><a href="/family" id="family-link">Family sign in</a></div>
+    <span class="label">In loving memory</span>
+    <div class="portrait">
+      {% if profile.portrait_media_id %}
+        <img src="/api/media/{{ profile.portrait_media_id }}/thumb" alt="Portrait of {{ name }}">
+      {% else %}
+        <svg viewBox="0 0 40 80" aria-hidden="true"><path d="M20 4c5 8 6 12 0 20c-6-8-5-12 0-20z" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="12" y="30" width="16" height="44" fill="none" stroke="currentColor" stroke-width="1.2"/><line x1="20" y1="24" x2="20" y2="30" stroke="currentColor" stroke-width="1.2"/></svg>
+      {% endif %}
+    </div>
+    <h1>{{ name }}</h1>
+    {% if profile.known_as %}<p class="known">{{ profile.known_as }}</p>{% endif %}
+    {% if profile.born or profile.died %}
+    <div class="dates"><span>{{ profile.born or "—" }}</span><span class="dash" aria-hidden="true"></span><span>{{ profile.died or "—" }}</span></div>
+    {% endif %}
+    {% set places = [] %}
+    {% if profile.birthplace %}{% set _ = places.append("Born in " ~ profile.birthplace) %}{% endif %}
+    {% if profile.resting_place %}{% set _ = places.append("Resting at " ~ profile.resting_place) %}{% endif %}
+    {% if places %}<p class="places">{{ places | join("  ·  ") }}</p>{% endif %}
+    {% if profile.epitaph %}<p class="epitaph">{{ profile.epitaph }}</p>{% endif %}
+    <div class="hero-actions">
+      <a class="btn" href="#tributes">Leave a tribute</a>
+      <a class="btn ghost" href="#candles">Light a candle</a>
+      {% if giving and giving.giving_open %}<a class="btn ghost" href="#give">Support the family</a>{% endif %}
+      <button class="btn ghost editor-only" id="edit-profile" type="button" hidden>Edit her details</button>
+    </div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Chapters"><div class="wrap wide">
+  {% for c in chapters %}<a href="#ch-{{ c.slug }}">{{ c.title }}</a>{% endfor %}
+  <a href="#gallery-sec">Gallery</a><a href="#tributes">Tributes</a><a href="#candles">Candles</a>
+  {% if giving %}<a href="#give">Support the family</a>{% endif %}
+</div></nav>
+
+{% if degraded %}
+<div class="wrap"><p class="notice mt">Part of this page couldn't load just now. Please refresh in a minute.</p></div>
+{% endif %}
+<div class="wrap editor-only" hidden><p class="banner" id="editor-banner">You're signed in as family. Use “Add to this chapter” to share a memory, a story or a photograph.</p></div>
+
+<main class="wrap" id="chapters">
+  {% for c in chapters %}
+  <section class="chapter{% if c.hidden %} is-hidden{% endif %}" id="ch-{{ c.slug }}" data-chapter-id="{{ c.id }}">
+    <div class="chapter-head">
+      <span class="num">Chapter {{ loop.index | roman }}{% if c.hidden %} · hidden from visitors{% endif %}</span>
+      <h2>{{ c.title }}</h2>
+      {% if c.intro %}<p class="intro">{{ c.intro }}</p>{% else %}<p class="intro pending">{{ c.prompt or "The family will add the opening words for this chapter." }}</p>{% endif %}
+    </div>
+    {% if c.slug == "farewell" %}
+    <div class="service">
+      <div><span class="label">Date</span><span class="val">{{ profile.service_date or "To be added by the family" }}</span></div>
+      <div><span class="label">Venue</span><span class="val">{{ profile.service_venue or "To be added by the family" }}</span></div>
+      <div><span class="label">Resting place</span><span class="val">{{ profile.resting_place or "To be added by the family" }}</span></div>
+      {% if profile.stream_url %}<div><span class="label">Livestream</span><a class="val" href="{{ profile.stream_url }}" target="_blank" rel="noopener noreferrer">Watch the burial service</a></div>{% endif %}
+    </div>
+    {% endif %}
+    {% if c.entries %}
+    <div class="entries">
+      {% for e in c.entries %}
+      <article class="entry" id="m-{{ e.id }}" data-entry-id="{{ e.id }}" data-author-id="{{ e.author_id }}">
+        {% if e.period %}<span class="period">{{ e.period }}</span>{% endif %}
+        {% if e.title %}<h3>{{ e.title }}</h3>{% endif %}
+        {% if e.media_id %}
+        <figure>
+          <img src="/api/media/{{ e.media_id }}/thumb" data-full="/api/media/{{ e.media_id }}" alt="{{ e.caption or e.title or 'Photograph' }}" loading="lazy">
+          {% if e.caption %}<figcaption class="hint">{{ e.caption }}</figcaption>{% endif %}
+        </figure>
+        {% endif %}
+        {% if e.body %}<div class="text">{{ e.body }}</div>{% endif %}
+        <div class="byline">
+          <span>Shared by <strong>{{ e.author_name }}</strong>{% if e.relation %}, {{ e.relation }}{% endif %}</span>
+          <span>· {{ e.created_at | nice_date }}</span>
+          <button class="btn link entry-edit" type="button" hidden>Edit</button>
+          <button class="btn link danger entry-delete" type="button" hidden>Remove</button>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty">No memories in this chapter yet.</p>
+    {% endif %}
+    <div class="chapter-actions editor-only" hidden>
+      <button class="btn small add-entry" type="button">Add to this chapter</button>
+      <button class="btn small ghost edit-chapter" type="button">Edit chapter</button>
+    </div>
+  </section>
+  {% endfor %}
+  <div class="chapter-actions editor-only mt" hidden><button class="btn ghost" id="add-chapter" type="button">Add a new chapter</button></div>
+</main>
+
+<section class="section" id="gallery-sec"><div class="wrap wide">
+  <div class="section-head"><span class="label">Photographs</span><h2>Gallery</h2></div>
+  {% if photos %}
+  <div class="gallery">
+    {% for e in photos %}<button type="button" data-full="/api/media/{{ e.media_id }}" aria-label="Open photograph"><img src="/api/media/{{ e.media_id }}/thumb" alt="{{ e.caption or e.title or 'Photograph' }}" loading="lazy"></button>{% endfor %}
+  </div>
+  {% else %}<p class="empty">Photographs added to any chapter appear here.</p>{% endif %}
+</div></section>
+
+<section class="section" id="tributes"><div class="wrap">
+  <div class="section-head"><span class="label">Words from those who loved her</span><h2>Tributes</h2></div>
+  <form class="inline" id="tribute-form" novalidate>
+    <div class="row">
+      <div class="field"><label for="t-name">Your name</label><input id="t-name" name="name" required maxlength="80" autocomplete="name"></div>
+      <div class="field"><label for="t-rel">How you knew her</label><input id="t-rel" name="relation" maxlength="80" placeholder="Granddaughter, neighbour, church member…"></div>
+    </div>
+    <div class="field"><label for="t-msg">Your tribute</label><textarea id="t-msg" name="message" required maxlength="4000"></textarea></div>
+    <div class="hp" aria-hidden="true"><label for="t-website">Leave this empty</label><input id="t-website" name="website" tabindex="-1" autocomplete="off"></div>
+    <div class="form-actions"><button class="btn" type="submit">Post tribute</button><span class="hint" id="t-status" role="status"></span></div>
+  </form>
+  {% if tributes %}
+  <div class="tributes">
+    {% for t in tributes %}
+    <article class="tribute">
+      <p class="msg">{{ t.message }}</p>
+      <div class="byline"><span><strong>{{ t.name }}</strong>{% if t.relation %}, {{ t.relation }}{% endif %}</span><span>· {{ t.created_at | nice_date }}</span></div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}<p class="empty mt">No tributes yet. Be the first to share a few words.</p>{% endif %}
+</div></section>
+
+<section class="section" id="candles"><div class="wrap">
+  <div class="section-head"><span class="label">Remembrance</span><h2>Candles</h2>
+    <p class="candle-count" id="candle-count" data-count="{{ candles.count }}">{% if candles.count %}{{ candles.count }} candle{{ "" if candles.count == 1 else "s" }} lit{% else %}No candles lit yet{% endif %}</p></div>
+  <form class="inline" id="candle-form" novalidate>
+    <div class="row">
+      <div class="field"><label for="c-name">Your name</label><input id="c-name" name="name" required maxlength="80" autocomplete="name"></div>
+      <div class="field"><label for="c-note">A short line (optional)</label><input id="c-note" name="note" maxlength="100" placeholder="Rest in peace, Mama"></div>
+    </div>
+    <div class="hp" aria-hidden="true"><label for="c-website">Leave this empty</label><input id="c-website" name="website" tabindex="-1" autocomplete="off"></div>
+    <div class="form-actions"><button class="btn" type="submit">Light a candle</button><span class="hint" id="c-status" role="status"></span></div>
+  </form>
+  <div class="candles" id="candle-list">
+    {% for c in candles.candles %}<div class="candle"><span class="c" aria-hidden="true"></span><span><strong>{{ c.name }}</strong>{% if c.note %} — {{ c.note }}{% endif %}</span></div>{% endfor %}
+  </div>
+</div></section>
+
+{% if giving %}
+<section class="section" id="give"><div class="wrap give">
+  <div class="section-head"><span class="label">Harambee</span><h2>Support the Family</h2>
+    <p>Contributions help the family with the funeral and the costs that follow. Every contribution is recorded and confirmed with M-Pesa before it is counted.</p></div>
+  <div class="give-total">
+    <span class="amt">KES {{ "{:,}".format(giving.total) }}</span>
+    <span class="hint">received from {{ giving.count }} contribution{{ "" if giving.count == 1 else "s" }}</span>
+  </div>
+  {% if giving.paybill %}
+  <div class="paybill">
+    <div><span class="label">M-Pesa Paybill</span><span class="val">{{ giving.paybill }}</span></div>
+    {% if giving.account %}<div><span class="label">Account</span><span class="val">{{ giving.account }}</span></div>{% endif %}
+    <div><span class="label">Before you pay</span><span class="hint">Check that M-Pesa shows the family's registered name. Never share your PIN with anyone.</span></div>
+  </div>
+  {% endif %}
+  {% if giving.giving_open %}
+  <form class="inline" id="give-form" novalidate data-min="{{ giving.min_amount }}" data-max="{{ giving.max_amount }}">
+    <p class="hint">Pay from your phone: enter your Safaricom number and you'll get an M-Pesa prompt to confirm with your PIN. This website never sees your PIN.</p>
+    <div class="row">
+      <div class="field"><label for="g-phone">Safaricom number</label><input id="g-phone" name="phone" inputmode="tel" autocomplete="tel" required placeholder="0712 345 678" maxlength="20"></div>
+      <div class="field"><label for="g-amount">Amount (KES)</label><input id="g-amount" name="amount" inputmode="numeric" required pattern="[0-9]*" placeholder="1000"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="g-name">Your name</label><input id="g-name" name="name" required maxlength="80" autocomplete="name"></div>
+      <div class="field"><label for="g-msg">Message (optional)</label><input id="g-msg" name="message" maxlength="300"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="g-show" checked> Show my name in the list of contributors</label>
+    <div class="hp" aria-hidden="true"><label for="g-website">Leave this empty</label><input id="g-website" name="website" tabindex="-1" autocomplete="off"></div>
+    <div class="form-actions"><button class="btn" type="submit" id="g-submit">Send M-Pesa prompt</button></div>
+    <p class="notice" id="g-status" role="status" hidden></p>
+  </form>
+  {% endif %}
+  {% if giving.contributors %}
+  <div class="stack"><span class="label">With gratitude to</span>
+    <div class="names">{% for c in giving.contributors %}<span>{{ c.name }}{% if c.amount %} · KES {{ "{:,}".format(c.amount) }}{% endif %}</span>{% endfor %}</div>
+  </div>
+  {% endif %}
+</div></section>
+{% endif %}
+
+<footer><div class="wrap">
+  <p>This memorial is kept by Martha's family. Family members invited by the family can add stories, photographs and chapters. Tributes from visitors appear once the family has approved them.</p>
+  {% if profile.stream_url %}<p>The burial service was streamed live: <a href="{{ profile.stream_url }}" target="_blank" rel="noopener noreferrer">watch the recording</a>.</p>{% endif %}
+</div></footer>
+
+{% include "_editor_dialogs.html" %}
+<div class="overlay lightbox" id="lightbox" hidden><img id="lightbox-img" alt=""></div>
+{% endblock %}
+{% block scripts %}<script src="/static/memorial.js?v={{ asset_version }}" defer></script>{% endblock %}

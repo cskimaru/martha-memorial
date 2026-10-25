@@ -1,0 +1,340 @@
+# Production stack for the Martha Kemunto Ongosi memorial.
+# Prepare once with `make init`, then `make up`. See docs/runbook.md.
+name: martha-memorial
+
+x-service: &service
+  restart: unless-stopped
+  read_only: true
+  tmpfs: ["/tmp"]
+  cap_drop: ["ALL"]
+  security_opt: ["no-new-privileges:true"]
+  logging:
+    driver: json-file
+    options: { max-size: "20m", max-file: "5" }
+  environment: &service-env
+    ENVIRONMENT: production
+    LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    SITE_ORIGIN: https://${SITE_DOMAIN}
+    APP_VERSION: ${IMAGE_TAG:-latest}
+
+
+services:
+  # ---------- Edge ----------
+  caddy:
+    image: caddy:2.8.4-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-${SITE_DOMAIN}}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [edge]
+    depends_on:
+      web: { condition: service_healthy }
+    cap_drop: ["ALL"]
+    cap_add: ["NET_BIND_SERVICE"]
+    security_opt: ["no-new-privileges:true"]
+    logging: { driver: json-file, options: { max-size: "20m", max-file: "5" } }
+    deploy: { resources: { limits: { memory: 256M } } }
+
+  web:
+    <<: *service
+    image: ${REGISTRY:-ghcr.io/owner/martha-memorial}/web:${IMAGE_TAG:-latest}
+    build: { context: ., dockerfile: deploy/docker/Dockerfile.service, args: { SERVICE: web } }
+    environment:
+      <<: *service-env
+      MEMORIAL_URL: http://memorial:8000
+      CONTRIBUTIONS_URL: http://contributions:8000
+      ASSET_VERSION: ${IMAGE_TAG:-latest}
+    networks: [edge, monitoring]
+    deploy: { resources: { limits: { memory: 256M } } }
+
+  # ---------- Services ----------
+  auth:
+    <<: *service
+    image: ${REGISTRY:-ghcr.io/owner/martha-memorial}/auth:${IMAGE_TAG:-latest}
+    build: { context: ., dockerfile: deploy/docker/Dockerfile.service, args: { SERVICE: auth } }
+    secrets:
+      - { source: auth_database_url, target: database_url }
+      - { source: redis_url, target: redis_url }
+      - { source: jwt_private_pem, target: jwt_private_key }
+      - { source: ip_hash_salt, target: ip_hash_salt }
+    networks: [edge, backend, monitoring]
+    depends_on: &db-deps
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    deploy: { resources: { limits: { memory: 384M } } }
+
+  memorial:
+    <<: *service
+    image: ${REGISTRY:-ghcr.io/owner/martha-memorial}/memorial:${IMAGE_TAG:-latest}
+    build: { context: ., dockerfile: deploy/docker/Dockerfile.service, args: { SERVICE: memorial } }
+    environment:
+      <<: *service-env
+      MODERATE_PUBLIC_TRIBUTES: ${MODERATE_PUBLIC_TRIBUTES:-true}
+    secrets:
+      - { source: memorial_database_url, target: database_url }
+      - { source: redis_url, target: redis_url }
+      - { source: jwt_public_pem, target: jwt_public_key }
+      - { source: ip_hash_salt, target: ip_hash_salt }
+    networks: [edge, backend, monitoring]
+    depends_on: *db-deps
+    deploy: { resources: { limits: { memory: 384M } } }
+
+  media:
+    <<: *service
+    image: ${REGISTRY:-ghcr.io/owner/martha-memorial}/media:${IMAGE_TAG:-latest}
+    build: { context: ., dockerfile: deploy/docker/Dockerfile.service, args: { SERVICE: media } }
+    environment:
+      <<: *service-env
+      # Photos live on the media-data volume. To use managed object storage instead
+      # (Backblaze B2, AWS S3, Cloudflare R2), set STORAGE_BACKEND=s3 and the S3_* values.
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+      LOCAL_DIR: /data/media
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_BUCKET: ${S3_BUCKET:-memorial-media}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+    secrets:
+      - { source: media_database_url, target: database_url }
+      - { source: redis_url, target: redis_url }
+      - { source: jwt_public_pem, target: jwt_public_key }
+      - { source: s3_secret_key, target: s3_secret_key }
+    volumes: [media-data:/data/media]
+    networks: [edge, backend, monitoring]
+    depends_on: *db-deps
+    deploy: { resources: { limits: { memory: 768M } } }
+
+  contributions:
+    <<: *service
+    image: ${REGISTRY:-ghcr.io/owner/martha-memorial}/contributions:${IMAGE_TAG:-latest}
+    build: { context: ., dockerfile: deploy/docker/Dockerfile.service, args: { SERVICE: contributions } }
+    environment: &contrib-env
+      <<: *service-env
+      MPESA_ENABLED: ${MPESA_ENABLED:-false}
+      MPESA_ENV: ${MPESA_ENV:-sandbox}
+      MPESA_SHORTCODE: ${MPESA_SHORTCODE:-}
+      MPESA_TRANSACTION_TYPE: ${MPESA_TRANSACTION_TYPE:-CustomerPayBillOnline}
+      MPESA_PARTY_B: ${MPESA_PARTY_B:-}
+      MPESA_ACCOUNT_REFERENCE: ${MPESA_ACCOUNT_REFERENCE:-MarthaOngosi}
+      MPESA_CALLBACK_ALLOWED_IPS: ${MPESA_CALLBACK_ALLOWED_IPS:-}
+      PUBLIC_SHOW_AMOUNTS: ${PUBLIC_SHOW_AMOUNTS:-false}
+      DISPLAY_PAYBILL: ${DISPLAY_PAYBILL:-}
+      DISPLAY_ACCOUNT: ${DISPLAY_ACCOUNT:-}
+      MIN_AMOUNT: ${MIN_AMOUNT:-10}
+      MAX_AMOUNT: ${MAX_AMOUNT:-250000}
+    secrets: &contrib-secrets
+      - { source: contributions_database_url, target: database_url }
+      - { source: redis_url, target: redis_url }
+      - { source: jwt_public_pem, target: jwt_public_key }
+      - { source: ip_hash_salt, target: ip_hash_salt }
+      - { source: phone_hash_pepper, target: phone_hash_pepper }
+      - { source: mpesa_consumer_key, target: mpesa_consumer_key }
+      - { source: mpesa_consumer_secret, target: mpesa_consumer_secret }
+      - { source: mpesa_passkey, target: mpesa_passkey }
+      - { source: mpesa_callback_token, target: mpesa_callback_token }
+    networks: [edge, backend, monitoring]
+    depends_on: *db-deps
+    deploy: { resources: { limits: { memory: 384M } } }
+
+  contributions-worker:
+    <<: *service
+    image: ${REGISTRY:-ghcr.io/owner/martha-memorial}/contributions:${IMAGE_TAG:-latest}
+    command: ["python", "-m", "app.worker"]
+    environment:
+      <<: *contrib-env
+    secrets: *contrib-secrets
+    networks: [edge, backend, monitoring]
+    depends_on:
+      contributions: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os,time,sys; sys.exit(0 if time.time()-os.path.getmtime('/tmp/reconciler-heartbeat')<180 else 1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+    deploy: { resources: { limits: { memory: 256M } } }
+
+  # ---------- Data ----------
+  postgres:
+    image: postgres:16.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_superuser_password
+    secrets:
+      - pg_superuser_password
+      - pg_auth_password
+      - pg_memorial_password
+      - pg_media_password
+      - pg_contributions_password
+      - pg_exporter_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./deploy/postgres/init-databases.sh:/docker-entrypoint-initdb.d/10-init-databases.sh:ro
+    command: ["postgres", "-c", "log_min_duration_statement=1000", "-c", "password_encryption=scram-sha-256"]
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    shm_size: 256m
+    logging: { driver: json-file, options: { max-size: "20m", max-file: "5" } }
+    deploy: { resources: { limits: { memory: 1G } } }
+
+  redis:
+    image: redis:7.4.1-alpine
+    restart: unless-stopped
+    command: ["sh", "-c", "exec redis-server --requirepass \"$$(cat /run/secrets/redis_password)\" --maxmemory 128mb --maxmemory-policy allkeys-lru --save ''"]
+    secrets: [redis_password]
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$(cat /run/secrets/redis_password)\" --no-auth-warning ping | grep PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    deploy: { resources: { limits: { memory: 192M } } }
+
+  backup:
+    image: ${REGISTRY:-ghcr.io/owner/martha-memorial}/backup:${IMAGE_TAG:-latest}
+    build: { context: deploy/backup }
+    user: "0:0"
+    restart: unless-stopped
+    environment:
+      BACKUP_HOUR_UTC: ${BACKUP_HOUR_UTC:-0}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-30}
+      OFFSITE_S3_ENDPOINT: ${OFFSITE_S3_ENDPOINT:-}
+      OFFSITE_S3_BUCKET: ${OFFSITE_S3_BUCKET:-}
+    secrets:
+      - pg_superuser_password
+      - backup_passphrase
+      - offsite_s3_access_key
+      - offsite_s3_secret_key
+    volumes:
+      - ${BACKUP_DIR:-./backups}:/backups
+      - media-data:/media   # read-write so restore.sh can put photos back
+      - backup-metrics:/metrics
+    networks: [backend, edge]
+    depends_on:
+      postgres: { condition: service_healthy }
+    logging: { driver: json-file, options: { max-size: "10m", max-file: "3" } }
+
+  # ---------- Monitoring (reach it through an SSH tunnel; nothing here is public) ----------
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=30d
+      - --web.enable-lifecycle
+    volumes:
+      - ./deploy/prometheus:/etc/prometheus:ro
+      - ./deploy/generated/prometheus-targets:/etc/prometheus-targets:ro
+      - prometheus-data:/prometheus
+    ports: ["127.0.0.1:9090:9090"]
+    networks: [monitoring]
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    restart: unless-stopped
+    command: ["--config.file=/etc/alertmanager/alertmanager.yml", "--storage.path=/alertmanager"]
+    volumes:
+      - ./deploy/generated/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    secrets: [smtp_password]
+    ports: ["127.0.0.1:9093:9093"]
+    networks: [monitoring, edge]
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_SERVER_ROOT_URL: http://localhost:3000
+    secrets: [grafana_admin_password]
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports: ["127.0.0.1:3000:3000"]
+    networks: [monitoring]
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    command:
+      - --path.rootfs=/host
+      - --collector.textfile.directory=/textfile
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+      - backup-metrics:/textfile:ro
+    networks: [monitoring]
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.16.0
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_URI: postgres:5432/postgres?sslmode=disable
+      DATA_SOURCE_USER: exporter
+      DATA_SOURCE_PASS_FILE: /run/secrets/pg_exporter_password
+    secrets: [pg_exporter_password]
+    networks: [backend, monitoring]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    restart: unless-stopped
+    volumes: [./deploy/prometheus/blackbox.yml:/etc/blackbox_exporter/config.yml:ro]
+    networks: [monitoring, edge]
+
+networks:
+  edge: {}
+  backend: { internal: true }
+  monitoring: { internal: true }
+
+volumes:
+  caddy-data: {}
+  caddy-config: {}
+  postgres-data: {}
+  media-data: {}
+  prometheus-data: {}
+  alertmanager-data: {}
+  grafana-data: {}
+  backup-metrics: {}
+
+secrets:
+  jwt_private_pem: { file: ./secrets/jwt_private.pem }
+  jwt_public_pem: { file: ./secrets/jwt_public.pem }
+  ip_hash_salt: { file: ./secrets/ip_hash_salt }
+  phone_hash_pepper: { file: ./secrets/phone_hash_pepper }
+  redis_password: { file: ./secrets/redis_password }
+  redis_url: { file: ./secrets/redis_url }
+  pg_superuser_password: { file: ./secrets/pg_superuser_password }
+  pg_auth_password: { file: ./secrets/pg_auth_password }
+  pg_memorial_password: { file: ./secrets/pg_memorial_password }
+  pg_media_password: { file: ./secrets/pg_media_password }
+  pg_contributions_password: { file: ./secrets/pg_contributions_password }
+  pg_exporter_password: { file: ./secrets/pg_exporter_password }
+  auth_database_url: { file: ./secrets/auth_database_url }
+  memorial_database_url: { file: ./secrets/memorial_database_url }
+  media_database_url: { file: ./secrets/media_database_url }
+  contributions_database_url: { file: ./secrets/contributions_database_url }
+  s3_secret_key: { file: ./secrets/s3_secret_key }
+  mpesa_consumer_key: { file: ./secrets/mpesa_consumer_key }
+  mpesa_consumer_secret: { file: ./secrets/mpesa_consumer_secret }
+  mpesa_passkey: { file: ./secrets/mpesa_passkey }
+  mpesa_callback_token: { file: ./secrets/mpesa_callback_token }
+  backup_passphrase: { file: ./secrets/backup_passphrase }
+  offsite_s3_access_key: { file: ./secrets/offsite_s3_access_key }
+  offsite_s3_secret_key: { file: ./secrets/offsite_s3_secret_key }
+  grafana_admin_password: { file: ./secrets/grafana_admin_password }
+  smtp_password: { file: ./secrets/smtp_password }

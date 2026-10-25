@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Family · Martha Kemunto Ongosi{% endblock %}
+{% block meta %}<meta name="robots" content="noindex">{% endblock %}
+{% block body %}
+<main class="wrap wide dash">
+  <div class="stack">
+    <a href="/" class="hint">← Back to the memorial</a>
+    <h1>Family area</h1>
+  </div>
+
+  <form class="inline" id="login-form" hidden novalidate>
+    <h2>Sign in</h2>
+    <div class="row">
+      <div class="field"><label for="l-email">Email</label><input id="l-email" type="email" autocomplete="username" required></div>
+      <div class="field"><label for="l-password">Password</label><input id="l-password" type="password" autocomplete="current-password" required></div>
+    </div>
+    <div class="form-actions"><button class="btn" type="submit">Sign in</button><span class="err" id="l-err" role="alert"></span></div>
+    <p class="hint">Family accounts are created by invitation. Ask the person managing the memorial to invite you.</p>
+  </form>
+
+  <div id="dash" hidden class="stack">
+    <div class="copy-row"><span>Signed in as <strong id="me-name"></strong> <span class="hint" id="me-roles"></span></span>
+      <button class="btn small ghost" id="logout" type="button">Sign out</button></div>
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="tributes" aria-selected="true">Tributes to approve</button>
+      <button role="tab" data-tab="people" data-role="owner" hidden>Family members</button>
+      <button role="tab" data-tab="ledger" data-role="treasurer" hidden>Contributions</button>
+      <button role="tab" data-tab="account">My account</button>
+    </div>
+
+    <section data-panel="tributes" class="stack">
+      <p class="hint">Tributes from visitors appear on the memorial only after a family member approves them.</p>
+      <div id="pending-list" class="stack"></div>
+    </section>
+
+    <section data-panel="people" class="stack" hidden>
+      <form class="inline" id="invite-form" novalidate>
+        <h2>Invite a family member</h2>
+        <div class="row">
+          <div class="field"><label for="i-email">Their email</label><input id="i-email" type="email" required></div>
+          <div class="field"><label for="i-name">Their name</label><input id="i-name" maxlength="120"></div>
+        </div>
+        <div class="field"><span class="label">What they can do</span>
+          <label class="check"><input type="checkbox" name="role" value="editor" checked> Add and edit stories and photos</label>
+          <label class="check"><input type="checkbox" name="role" value="treasurer"> Manage contributions</label>
+          <label class="check"><input type="checkbox" name="role" value="owner"> Manage everything, including family accounts</label>
+        </div>
+        <div class="form-actions"><button class="btn" type="submit">Create invitation link</button><span class="err" id="i-err" role="alert"></span></div>
+        <div class="copy-row" id="invite-result" hidden><input id="invite-url" readonly aria-label="Invitation link"><button class="btn small" type="button" id="copy-invite">Copy link</button></div>
+        <p class="hint" id="invite-hint" hidden>Send this link to them privately, for example on WhatsApp. It works once and expires in 14 days.</p>
+      </form>
+      <h2>Accounts</h2>
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Roles</th><th>Last sign-in</th><th></th></tr></thead><tbody id="users-body"></tbody></table></div>
+      <h2>Invitations</h2>
+      <div class="table-wrap"><table><thead><tr><th>Email</th><th>Roles</th><th>Status</th><th></th></tr></thead><tbody id="invites-body"></tbody></table></div>
+    </section>
+
+    <section data-panel="ledger" class="stack" hidden>
+      <div class="kpis" id="ledger-kpis"></div>
+      <form class="inline" id="manual-form" novalidate>
+        <h2>Record a contribution received by hand</h2>
+        <div class="row">
+          <div class="field"><label for="m-method">How it was received</label>
+            <select id="m-method"><option value="cash">Cash</option><option value="mpesa_manual">M-Pesa (sent directly to the family)</option><option value="bank">Bank transfer</option></select></div>
+          <div class="field"><label for="m-amount">Amount (KES)</label><input id="m-amount" inputmode="numeric" required></div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="m-name">Contributor's name</label><input id="m-name" maxlength="80" required></div>
+          <div class="field"><label for="m-ref">M-Pesa receipt or bank reference</label><input id="m-ref" maxlength="80"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="m-show" checked> Show their name publicly</label>
+        <div class="form-actions"><button class="btn" type="submit">Record contribution</button><span class="err" id="m-err" role="alert"></span></div>
+      </form>
+      <div class="copy-row"><h2>Ledger</h2><a class="btn small ghost" href="/api/contributions/ledger.csv">Download CSV</a></div>
+      <div class="table-wrap"><table><thead><tr><th>Date</th><th>Name</th><th>Method</th><th>Status</th><th class="num">Amount</th><th>Receipt / ref</th><th>Phone</th><th></th></tr></thead><tbody id="ledger-body"></tbody></table></div>
+    </section>
+
+    <section data-panel="account" class="stack" hidden>
+      <form class="inline" id="password-form" novalidate>
+        <h2>Change your password</h2>
+        <div class="row">
+          <div class="field"><label for="pw-current">Current password</label><input id="pw-current" type="password" autocomplete="current-password" required></div>
+          <div class="field"><label for="pw-new">New password (at least 10 characters)</label><input id="pw-new" type="password" autocomplete="new-password" required minlength="10"></div>
+        </div>
+        <div class="form-actions"><button class="btn" type="submit">Change password</button><span class="err" id="pw-err" role="alert"></span></div>
+      </form>
+    </section>
+  </div>
+</main>
+
+<div class="overlay" id="review-ov" hidden>
+  <form class="sheet" id="review-form" novalidate>
+    <h2>Review contribution</h2>
+    <p id="review-summary"></p>
+    <div class="field"><label for="r-to">Decision</label><select id="r-to"><option value="confirmed">Confirm: the amount was received</option><option value="void">Withdraw this entry</option></select></div>
+    <div class="field"><label for="r-note">Note for the record (what you checked)</label><textarea id="r-note" required minlength="5" maxlength="500"></textarea></div>
+    <div class="form-actions"><button class="btn" type="submit">Save decision</button><button class="btn ghost" type="button" data-close>Cancel</button><span class="err" id="r-err" role="alert"></span></div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/family.js?v={{ asset_version }}" defer></script>{% endblock %}

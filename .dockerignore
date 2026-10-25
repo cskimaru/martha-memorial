@@ -1,0 +1,15 @@
+.git
+.github
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/tests
+**/*.db
+**/media-data
+secrets
+deploy/generated
+backups
+docs
+*.md
+.env
+.env.*

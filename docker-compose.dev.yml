@@ -1,0 +1,26 @@
+# Local development / CI: plain HTTP on http://localhost:8080, no certificates.
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+services:
+  caddy:
+    ports: !override ["8080:80"]
+    environment:
+      SITE_ADDRESS: ":80"
+  web:
+    environment:
+      ENVIRONMENT: development
+      SITE_ORIGIN: http://localhost:8080
+      MEMORIAL_URL: http://memorial:8000
+      CONTRIBUTIONS_URL: http://contributions:8000
+  auth:
+    environment:
+      ENVIRONMENT: development
+      SITE_ORIGIN: http://localhost:8080
+      COOKIE_SECURE: "false"
+  memorial:
+    environment: { ENVIRONMENT: development, SITE_ORIGIN: "http://localhost:8080" }
+  media:
+    environment: { ENVIRONMENT: development, SITE_ORIGIN: "http://localhost:8080" }
+  contributions:
+    environment: { ENVIRONMENT: development, SITE_ORIGIN: "http://localhost:8080" }
+  contributions-worker:
+    environment: { ENVIRONMENT: development, SITE_ORIGIN: "http://localhost:8080" }

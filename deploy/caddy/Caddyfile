@@ -1,0 +1,84 @@
+# Public gateway. Automatic HTTPS (Let's Encrypt) for {$SITE_ADDRESS}.
+{
+	email {$ACME_EMAIL:admin@example.com}
+	admin off
+	servers {
+		protocols h1 h2 h3
+	}
+}
+
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+		-Server
+	}
+
+	# `route` keeps these in the written order: internal paths are refused before anything is proxied.
+	route {
+		# Health, metrics and API docs are for the internal network only.
+		@internal path /metrics /metrics/* /healthz /readyz /docs /openapi.json
+		respond @internal 404
+
+		@uploads path /api/media/upload
+		request_body @uploads {
+			max_size 25MB
+		}
+		@other not path /api/media/upload
+		request_body @other {
+			max_size 1MB
+		}
+
+		handle /api/auth/* {
+			reverse_proxy auth:8000 {
+				lb_try_duration 10s
+				header_up X-Request-ID {http.request.uuid}
+			}
+		}
+		handle /api/memorial/* {
+			reverse_proxy memorial:8000 {
+				lb_try_duration 10s
+				header_up X-Request-ID {http.request.uuid}
+			}
+		}
+		handle /api/media/* {
+			reverse_proxy media:8000 {
+				lb_try_duration 10s
+				header_up X-Request-ID {http.request.uuid}
+			}
+		}
+		handle /api/contributions/* {
+			reverse_proxy contributions:8000 {
+				lb_try_duration 10s
+				header_up X-Request-ID {http.request.uuid}
+			}
+		}
+		handle /static/* {
+			header Cache-Control "public, max-age=604800"
+			reverse_proxy web:8000
+		}
+		handle {
+			reverse_proxy web:8000 {
+				lb_try_duration 10s
+				header_up X-Request-ID {http.request.uuid}
+			}
+		}
+	}
+
+	handle_errors {
+		@unavailable expression {err.status_code} in [502, 503, 504]
+		respond @unavailable "The memorial is being updated. Please try again in a minute." 503
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

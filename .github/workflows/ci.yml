@@ -1,0 +1,158 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install ruff==0.8.4
+      - run: ruff check .
+      - run: ruff format --check .
+
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [auth, memorial, media, contributions, web]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install ./libs/common -r services/${{ matrix.service }}/requirements.txt -r requirements-dev.txt
+      - name: Unit and API tests
+        working-directory: services/${{ matrix.service }}
+        run: pytest -q --cov=app --cov-config=../../pyproject.toml --cov-report=term-missing --cov-fail-under=80
+
+  migrations-postgres:
+    # The unit tests use SQLite; this proves every migration also applies cleanly to real PostgreSQL.
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16.6-alpine
+        env: { POSTGRES_PASSWORD: ci, POSTGRES_DB: ci }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install ./libs/common -r services/auth/requirements.txt -r services/media/requirements.txt -r services/contributions/requirements.txt
+      - name: Upgrade, downgrade and upgrade again
+        run: |
+          for s in auth memorial media contributions; do
+            PGPASSWORD=ci psql -h localhost -U postgres -d ci -c "CREATE DATABASE $s"
+            export DATABASE_URL="postgresql+asyncpg://postgres:ci@localhost:5432/$s"
+            (cd services/$s && alembic upgrade head && alembic downgrade base && alembic upgrade head && alembic check)
+          done
+
+  security:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install bandit==1.8.0 pip-audit==2.7.3
+      - name: Static analysis (bandit)
+        run: bandit -q -r libs services -x '*/tests/*,*/migrations/*' -ll
+      - name: Known vulnerabilities in dependencies (pip-audit)
+        run: |
+          for s in auth memorial media contributions web; do
+            pip-audit --strict -r services/$s/requirements.txt
+          done
+          pip-audit --strict ./libs/common
+      - name: Secrets accidentally committed (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  config:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate throwaway secrets and config
+        run: cp .env.example .env && ./scripts/init.sh
+      - name: Compose files are valid
+        run: |
+          docker compose config -q
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml config -q
+      - name: Caddyfile is valid
+        run: docker run --rm -e SITE_ADDRESS=example.com -v "$PWD/deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2.8.4-alpine caddy validate --config /etc/caddy/Caddyfile
+      - name: Prometheus config and alert rules are valid
+        run: |
+          docker run --rm -v "$PWD/deploy/prometheus:/p:ro" --entrypoint promtool prom/prometheus:v2.55.1 check rules /p/alerts.yml
+      - name: Shell scripts
+        run: shellcheck scripts/*.sh deploy/backup/*.sh deploy/postgres/*.sh services/*/entrypoint.sh
+
+  build:
+    needs: [lint, test, security, config, migrations-postgres]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [auth, memorial, media, contributions, web, backup]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Image name
+        id: meta
+        run: |
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/${{ matrix.service }}" >> "$GITHUB_OUTPUT"
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.service == 'backup' && 'deploy/backup' || '.' }}
+          file: ${{ matrix.service == 'backup' && 'deploy/backup/Dockerfile' || 'deploy/docker/Dockerfile.service' }}
+          build-args: |
+            SERVICE=${{ matrix.service }}
+            VERSION=${{ github.sha }}
+          load: true
+          tags: ${{ steps.meta.outputs.image }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+      - name: Scan image for vulnerabilities (Trivy)
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: ${{ steps.meta.outputs.image }}:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+      - name: Push (main branch only)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker push "${{ steps.meta.outputs.image }}:${{ github.sha }}"
+
+  e2e:
+    # Starts the full stack from the freshly built images and runs the smoke test.
+    needs: [lint, test, config]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp .env.example .env && sed -i 's/^SITE_DOMAIN=.*/SITE_DOMAIN=localhost/' .env && ./scripts/init.sh
+      - name: Start stack
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build --wait \
+            caddy web auth memorial media contributions contributions-worker postgres redis
+      - name: Smoke test
+        run: python3 scripts/smoke_test.py http://localhost:8080
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --tail=200

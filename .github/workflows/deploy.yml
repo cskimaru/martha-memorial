@@ -1,0 +1,46 @@
+name: Deploy
+
+# Deploys an image tag that CI has already built, tested and scanned.
+# Production deploys wait for approval: Settings -> Environments -> production -> Required reviewers.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Commit SHA to deploy (an image tag pushed by CI)"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment:
+      name: production
+      url: https://${{ vars.SITE_DOMAIN }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ inputs.tag }}" }
+      - name: Configure SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+      - name: Ship compose and config files
+        run: |
+          rsync -az --delete --exclude secrets --exclude backups --exclude .env --exclude deploy/generated \
+            docker-compose.yml Makefile deploy scripts .env.example \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ vars.DEPLOY_PATH }}/"
+      - name: Back up, deploy, verify, roll back on failure
+        env:
+          TAG: ${{ inputs.tag }}
+          REGISTRY: ghcr.io/${{ github.repository }}
+        run: |
+          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "cd '${{ vars.DEPLOY_PATH }}' && REGISTRY='${REGISTRY,,}' NEW_TAG='$TAG' ./scripts/deploy.sh"
+      - name: Public smoke test
+        run: python3 scripts/smoke_test.py "https://${{ vars.SITE_DOMAIN }}"

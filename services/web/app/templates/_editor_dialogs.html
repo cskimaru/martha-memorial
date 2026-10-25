@@ -1,0 +1,53 @@
+<div class="overlay" id="entry-ov" hidden>
+  <form class="sheet" id="entry-form" novalidate>
+    <h2 id="entry-title">Add to her story</h2>
+    <div class="field"><label for="f-chapter">Chapter</label><select id="f-chapter"></select></div>
+    <div class="row">
+      <div class="field"><label for="f-title">Title (optional)</label><input id="f-title" maxlength="160" placeholder="The day she walked us to school"></div>
+      <div class="field"><label for="f-period">Year or period (optional)</label><input id="f-period" maxlength="40" placeholder="1970s"></div>
+    </div>
+    <div class="field"><label for="f-body">Your memory or story</label><textarea id="f-body" maxlength="20000"></textarea></div>
+    <div class="field"><label for="f-photo">Photograph (optional)</label><input id="f-photo" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><img class="photo-preview" id="f-preview" alt="" hidden></div>
+    <label class="check" id="f-remove-wrap" hidden><input type="checkbox" id="f-remove"> Remove the current photograph</label>
+    <div class="field"><label for="f-caption">Photo caption</label><input id="f-caption" maxlength="240"></div>
+    <div class="row">
+      <div class="field"><label for="f-name">Your name</label><input id="f-name" required maxlength="80"></div>
+      <div class="field"><label for="f-rel">Relationship to her</label><input id="f-rel" maxlength="80" placeholder="Daughter, son, friend…"></div>
+    </div>
+    <div class="form-actions"><button class="btn" type="submit" id="f-save">Save to memorial</button><button class="btn ghost" type="button" data-close>Cancel</button><span class="err" id="f-err" role="alert"></span></div>
+  </form>
+</div>
+
+<div class="overlay" id="profile-ov" hidden>
+  <form class="sheet" id="profile-form" novalidate>
+    <h2>Her details</h2>
+    <div class="field"><label for="p-full_name">Full name</label><input id="p-full_name" maxlength="160" required></div>
+    <div class="field"><label for="p-known_as">Line under her name</label><input id="p-known_as" maxlength="200" placeholder="Beloved wife, mother and grandmother"></div>
+    <div class="row">
+      <div class="field"><label for="p-born">Born</label><input id="p-born" maxlength="60" placeholder="12 March 1948"></div>
+      <div class="field"><label for="p-died">Died</label><input id="p-died" maxlength="60"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="p-birthplace">Place of birth</label><input id="p-birthplace" maxlength="160"></div>
+      <div class="field"><label for="p-resting_place">Resting place</label><input id="p-resting_place" maxlength="160"></div>
+    </div>
+    <div class="field"><label for="p-epitaph">Epitaph or verse</label><textarea id="p-epitaph" maxlength="600"></textarea></div>
+    <div class="field"><label for="p-portrait">Portrait photograph</label><input id="p-portrait" type="file" accept="image/jpeg,image/png,image/webp"></div>
+    <div class="row">
+      <div class="field"><label for="p-service_date">Burial date</label><input id="p-service_date" maxlength="80"></div>
+      <div class="field"><label for="p-service_venue">Burial venue</label><input id="p-service_venue" maxlength="200"></div>
+    </div>
+    <div class="field"><label for="p-stream_url">Livestream link</label><input id="p-stream_url" maxlength="300" placeholder="https://"></div>
+    <div class="form-actions"><button class="btn" type="submit">Save details</button><button class="btn ghost" type="button" data-close>Cancel</button><span class="err" id="p-err" role="alert"></span></div>
+  </form>
+</div>
+
+<div class="overlay" id="chapter-ov" hidden>
+  <form class="sheet" id="chapter-form" novalidate>
+    <h2 id="chapter-form-title">Edit chapter</h2>
+    <div class="field"><label for="k-title">Chapter title</label><input id="k-title" required maxlength="120"></div>
+    <div class="field"><label for="k-intro">Opening words for this chapter</label><textarea id="k-intro" maxlength="6000"></textarea></div>
+    <label class="check" id="k-hidden-wrap"><input type="checkbox" id="k-hidden"> Hide this chapter from visitors</label>
+    <div class="form-actions"><button class="btn" type="submit">Save chapter</button><button class="btn ghost" type="button" data-close>Cancel</button><span class="err" id="k-err" role="alert"></span></div>
+  </form>
+</div>
