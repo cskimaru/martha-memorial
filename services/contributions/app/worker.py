@@ -120,7 +120,7 @@ async def main(interval: float = 30.0) -> None:
                     log.info("Checked contributions", extra={"fields": {"count": n}})
             else:
                 await update_gauges(db, settings)
-            HEARTBEAT.write_text(str(time.time()))
+            await asyncio.to_thread(HEARTBEAT.write_text, str(time.time()))
         except Exception:
             log.exception("Reconciler pass failed")
         try:

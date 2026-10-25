@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # One image recipe for every Python service:  docker build --build-arg SERVICE=auth -f deploy/docker/Dockerfile.service .
-ARG PYTHON_IMAGE=python:3.12.8-slim-bookworm
+ARG PYTHON_IMAGE=python:3.12.10-slim-bookworm
 
 FROM ${PYTHON_IMAGE} AS build
 ARG SERVICE
