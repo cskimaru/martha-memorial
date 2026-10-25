@@ -21,7 +21,7 @@ x-service: &service
 services:
   # ---------- Edge ----------
   caddy:
-    image: caddy:2.8.4-alpine
+    image: caddy:2.11.6-alpine
     restart: unless-stopped
     ports: ["80:80", "443:443", "443:443/udp"]
     environment:
