@@ -116,7 +116,7 @@ jobs:
         run: |
           echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/${{ matrix.service }}" >> "$GITHUB_OUTPUT"
       - name: Build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.service == 'backup' && 'deploy/backup' || '.' }}
           file: ${{ matrix.service == 'backup' && 'deploy/backup/Dockerfile' || 'deploy/docker/Dockerfile.service' }}
