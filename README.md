@@ -33,6 +33,9 @@ Sign in at http://localhost:8080/family, invite family members, and start fillin
 
 ## Put it on the internet
 
+**Free to start:** [docs/free-hosting-oracle.md](docs/free-hosting-oracle.md) walks through running it on
+Oracle Cloud's free tier with a free DuckDNS address, step by step. For any other server:
+
 1. A small Linux server (2 vCPU, 4 GB RAM, 40 GB disk is plenty) with Docker installed.
 2. A domain name with an `A` record pointing at the server. Open ports 80 and 443.
 3. On the server: clone this repository, `make init`, set `SITE_DOMAIN` and `ACME_EMAIL` in `.env`, `make init` again.
