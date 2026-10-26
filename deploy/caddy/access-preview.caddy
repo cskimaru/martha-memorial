@@ -1,0 +1,5 @@
+# Private preview: everyone needs the preview password, and search engines are asked not to index.
+basic_auth {
+	{$PREVIEW_USER:family} {$PREVIEW_PASSWORD_HASH}
+}
+header X-Robots-Tag "noindex, nofollow"

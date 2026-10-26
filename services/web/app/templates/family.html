@@ -2,7 +2,7 @@
 {% block title %}Family · Martha Kemunto Ongosi{% endblock %}
 {% block meta %}<meta name="robots" content="noindex">{% endblock %}
 {% block body %}
-<main class="wrap wide dash">
+<main class="wrap wide family-dash">
   <div class="stack">
     <a href="/" class="hint">← Back to the memorial</a>
     <h1>Family area</h1>
@@ -65,10 +65,5 @@
     </section>
   </div>
 </main>
-
-    <div class="field"><label for="r-note">Note for the record (what you checked)</label><textarea id="r-note" required minlength="5" maxlength="500"></textarea></div>
-    <div class="form-actions"><button class="btn" type="submit">Save decision</button><button class="btn ghost" type="button" data-close>Cancel</button><span class="err" id="r-err" role="alert"></span></div>
-  </form>
-</div>
 {% endblock %}
 {% block scripts %}<script src="/static/family.js?v={{ asset_version }}" defer></script>{% endblock %}

@@ -21,6 +21,7 @@ class Profile(TimestampMixin, Base):
     service_date: Mapped[str] = mapped_column(String(80), default="")
     service_venue: Mapped[str] = mapped_column(String(200), default="")
     stream_url: Mapped[str] = mapped_column(String(300), default="")
+    theme: Mapped[str] = mapped_column(String(20), default="plum", server_default="plum")
     updated_by: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
 

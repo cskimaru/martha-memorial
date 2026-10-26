@@ -129,3 +129,16 @@ async def test_chapter_hide_and_add(client):
     assert all(c["id"] != cid for c in public["chapters"])
     as_editor = (await client.get("/api/memorial/story", headers=EDITOR)).json()
     assert any(c["id"] == cid for c in as_editor["chapters"])
+
+
+async def test_family_chooses_colour_scheme(client):
+    story = (await client.get("/api/memorial/story")).json()
+    assert story["profile"]["theme"] == "plum"
+    ok = await client.put(
+        "/api/memorial/profile", json={"full_name": "Martha Kemunto Ongosi", "theme": "forest"}, headers=EDITOR
+    )
+    assert ok.status_code == 200 and ok.json()["theme"] == "forest"
+    bad = await client.put(
+        "/api/memorial/profile", json={"full_name": "Martha Kemunto Ongosi", "theme": "neon"}, headers=EDITOR
+    )
+    assert bad.status_code == 422

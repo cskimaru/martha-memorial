@@ -70,6 +70,14 @@ templates.env.filters["nice_date"] = nice_date
 templates.env.filters["initials"] = initials
 templates.env.globals["asset_version"] = settings.asset_version
 templates.env.globals["site_origin"] = settings.site_origin
+templates.env.globals["site_preview"] = settings.site_preview
+templates.env.globals["palettes"] = [
+    ("plum", "Plum"),
+    ("forest", "Forest"),
+    ("navy", "Navy"),
+    ("burgundy", "Burgundy"),
+    ("charcoal", "Charcoal"),
+]
 
 NO_STORE = {"Cache-Control": "no-store"}
 
@@ -91,6 +99,7 @@ async def home(request: Request) -> HTMLResponse:
         "index.html",
         {
             "profile": profile,
+            "theme": profile.get("theme") or "plum",
             "chapters": story["chapters"],
             "photos": photos,
             "tributes": data.tributes,

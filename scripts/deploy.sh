@@ -18,6 +18,10 @@ fi
 
 set_tag "$NEW_TAG"
 docker compose pull --quiet
+if grep -qE '^SITE_PREVIEW=true' .env; then
+  PREVIEW_PASSWORD=$(cat secrets/preview_password)
+  export PREVIEW_PASSWORD
+fi
 DOMAIN=$(grep -E '^SITE_DOMAIN=' .env | cut -d= -f2- | awk '{print $1}')
 if docker compose up -d --remove-orphans --wait --wait-timeout 180 \
    && python3 scripts/smoke_test.py "https://${DOMAIN}"; then

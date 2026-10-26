@@ -41,6 +41,16 @@ printf 'redis://:%s@redis:6379/0' "$(cat secrets/redis_password)" > secrets/redi
 chmod 644 secrets/*
 
 echo "Config:"
+if [ "${SITE_PREVIEW:-false}" = "true" ]; then
+  [ -s secrets/preview_password ] || { openssl rand -base64 12 | tr -d '/+=' | cut -c1-14 > secrets/preview_password; chmod 644 secrets/preview_password; }
+  hash=$(docker run --rm caddy:2.8.4-alpine caddy hash-password --plaintext "$(cat secrets/preview_password)")
+  # Compose reads $ in env files as variables, so each $ in the hash is written as $$.
+  printf 'SITE_MODE=preview\nPREVIEW_USER=family\nPREVIEW_PASSWORD_HASH=%s\n' "${hash//\$/\$\$}" > deploy/generated/caddy.env
+  echo "  PRIVATE PREVIEW: user 'family', password '$(cat secrets/preview_password)' (in secrets/preview_password)"
+else
+  printf 'SITE_MODE=public\n' > deploy/generated/caddy.env
+  echo "  public site: no password"
+fi
 printf -- '- targets: ["https://%s/"]\n' "${SITE_DOMAIN}" > deploy/generated/prometheus-targets/site.yml
 if [ -n "${ALERT_EMAIL_TO:-}" ] && [ -n "${SMTP_HOST:-}" ]; then
   python3 -c 'import os,sys; sys.stdout.write(os.path.expandvars(open("deploy/alertmanager.yml.template").read()))' \

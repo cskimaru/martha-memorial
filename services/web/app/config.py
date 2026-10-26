@@ -9,6 +9,9 @@ class Settings(CommonSettings):
     page_cache_seconds: float = 15.0
     upstream_timeout_seconds: float = 4.0
     asset_version: str = "1"
+    # Private preview before launch: shows a "not yet public" bar with a colour switcher.
+    # The gateway adds a password in this mode (see docs/runbook.md).
+    site_preview: bool = False
 
 
 @lru_cache

@@ -43,4 +43,7 @@ jobs:
           ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
             "cd '${{ vars.DEPLOY_PATH }}' && REGISTRY='${REGISTRY,,}' NEW_TAG='$TAG' ./scripts/deploy.sh"
       - name: Public smoke test
+        env:
+          # Only needed while the site is in private preview.
+          PREVIEW_PASSWORD: ${{ secrets.PREVIEW_PASSWORD }}
         run: python3 scripts/smoke_test.py "https://${{ vars.SITE_DOMAIN }}"

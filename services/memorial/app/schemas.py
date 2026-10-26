@@ -26,6 +26,7 @@ def _min(n: int):
 
 MediaId = Annotated[str, Field(pattern=r"^[0-9a-f]{32}$")]
 HttpsUrl = Annotated[str, Field(max_length=300, pattern=r"^(https://\S+)?$")]
+Theme = Literal["plum", "forest", "navy", "burgundy", "charcoal"]
 
 
 class ProfileIn(BaseModel):
@@ -40,6 +41,7 @@ class ProfileIn(BaseModel):
     service_date: Text(80) = ""
     service_venue: Text(200) = ""
     stream_url: HttpsUrl = ""
+    theme: Theme = "plum"
 
 
 class ProfileOut(ProfileIn):

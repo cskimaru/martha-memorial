@@ -37,6 +37,8 @@
       <div class="field"><label for="p-service_date">Burial date</label><input id="p-service_date" maxlength="80"></div>
       <div class="field"><label for="p-service_venue">Burial venue</label><input id="p-service_venue" maxlength="200"></div>
     </div>
+    <div class="field"><label for="p-theme">Colour scheme for the whole site</label>
+      <select id="p-theme">{% for key, label in palettes %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></div>
     <div class="field"><label for="p-stream_url">Livestream link</label><input id="p-stream_url" maxlength="300" placeholder="https://"></div>
     <div class="form-actions"><button class="btn" type="submit">Save details</button><button class="btn ghost" type="button" data-close>Cancel</button><span class="err" id="p-err" role="alert"></span></div>
   </form>

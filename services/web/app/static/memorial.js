@@ -15,6 +15,17 @@
     $("lightbox").hidden = false;
   });
 
+  // ---- Colour preview (private preview mode only; changes this visitor's view, nothing is saved) ----
+  document.querySelectorAll("[data-palette-choice]").forEach((b) => {
+    b.addEventListener("click", () => {
+      document.documentElement.dataset.palette = b.dataset.paletteChoice;
+      document.querySelectorAll("[data-palette-choice]").forEach((x) => x.setAttribute("aria-checked", String(x === b)));
+    });
+  });
+  // Preview the scheme while choosing it in "Edit her details".
+  const themeSelect = $("p-theme");
+  if (themeSelect) themeSelect.addEventListener("change", () => { document.documentElement.dataset.palette = themeSelect.value; });
+
   // ---- Prefill names ----
   ["t-name", "c-name"].forEach((id) => { const el = $(id); if (el && !el.value) el.value = remember("name"); });
 
@@ -160,10 +171,10 @@
     });
 
     // Profile form
-    const PF = ["full_name", "known_as", "born", "died", "birthplace", "resting_place", "epitaph", "service_date", "service_venue", "stream_url"];
+    const PF = ["full_name", "known_as", "born", "died", "birthplace", "resting_place", "epitaph", "service_date", "service_venue", "stream_url", "theme"];
     function openProfile() {
       const p = story.profile || {};
-      PF.forEach((k) => { $("p-" + k).value = p[k] || ""; });
+      PF.forEach((k) => { $("p-" + k).value = p[k] || (k === "theme" ? "plum" : ""); });
       $("p-portrait").value = ""; $("p-err").textContent = ""; $("profile-ov").hidden = false;
     }
     $("profile-form").addEventListener("submit", async (ev) => {

@@ -146,13 +146,18 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: cp .env.example .env && sed -i 's/^SITE_DOMAIN=.*/SITE_DOMAIN=localhost/' .env && ./scripts/init.sh
+      - run: |
+          cp .env.example .env
+          sed -i 's/^SITE_DOMAIN=.*/SITE_DOMAIN=localhost/; s/^SITE_PREVIEW=.*/SITE_PREVIEW=true/' .env
+          ./scripts/init.sh
       - name: Start stack
         run: |
           docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build --wait \
             caddy web auth memorial media postgres redis
+      - name: Preview password is required
+        run: test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/)" = 401
       - name: Smoke test
-        run: python3 scripts/smoke_test.py http://localhost:8080
+        run: PREVIEW_PASSWORD="$(cat secrets/preview_password)" python3 scripts/smoke_test.py http://localhost:8080
       - name: Logs on failure
         if: failure()
         run: docker compose logs --tail=200

@@ -10,6 +10,14 @@
 {% if profile.portrait_media_id %}<meta property="og:image" content="{{ site_origin }}/api/media/{{ profile.portrait_media_id }}">{% endif %}
 {% endblock %}
 {% block body %}
+{% if site_preview %}
+<div class="preview-bar"><div class="wrap wide">
+  <span><strong>Private preview.</strong> This memorial isn't public yet. Try the colours and tell the family which you prefer.</span>
+  <div class="palette-picker" role="radiogroup" aria-label="Colour scheme">
+    {% for key, label in palettes %}<button type="button" role="radio" data-palette-choice="{{ key }}" aria-checked="{{ 'true' if key == theme else 'false' }}"><span class="dot dot-{{ key }}" aria-hidden="true"></span>{{ label }}</button>{% endfor %}
+  </div>
+</div></div>
+{% endif %}
 <header class="hero">
   <div class="wrap">
     <div class="topbar"><a href="/family" id="family-link">Family sign in</a></div>

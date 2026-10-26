@@ -23,6 +23,20 @@ Commands run from the repository folder on the server.
 - [ ] Set `ALERT_EMAIL_TO`, `SMTP_*` and `secrets/smtp_password` so alerts are emailed; `make init && make up`
 - [ ] Restore drill: restore last night's backup on a spare machine (below) and check the site
 
+## Private preview, then launch
+
+New installs start in **private preview** (`SITE_PREVIEW=true` in `.env`): every page asks for a password and
+search engines are told not to index the site. A bar at the top lets reviewers try the five colour schemes.
+
+1. `make init` prints the preview login: user `family`, password in `secrets/preview_password`.
+2. Send reviewers the address and that login.
+3. Reviewers who should add stories and photos also need a family account: invite them from `/family`
+   (People tab). They sign in to the family area as usual, behind the preview password.
+4. The family picks the colour scheme in **Edit her details → Colour scheme for the whole site**.
+
+To launch: set `SITE_PREVIEW=false` in `.env`, then `make init && make up`. The password and the preview bar
+disappear and the site is public. To return to preview later, set it back to `true` and run the same commands.
+
 ## Monitoring
 
 Dashboards are only reachable from the server itself. From your computer:
@@ -50,7 +64,8 @@ Every push to `main` is tested, scanned and published as images tagged with the 
 3. The workflow takes a backup, switches to the new images, waits for every health check, runs the smoke
    test, and **rolls back automatically** if anything fails.
 
-One-time GitHub setup: repository secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`;
+One-time GitHub setup: repository secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`
+(and `PREVIEW_PASSWORD` while the site is in private preview);
 variables `SITE_DOMAIN`, `DEPLOY_PATH`; an environment named `production` with required reviewers; and on the
 server, `docker login ghcr.io` with a token that can read packages.
 
@@ -78,7 +93,3 @@ into `backups/archive/`, `make up`, then `make restore file=...`.
 * Database passwords: change the role password in Postgres first (`ALTER ROLE ... PASSWORD`), update
   `secrets/pg_<service>_password`, `make init` (regenerates the connection strings), `docker compose up -d`.
 
-## Bringing over content from the first draft page
-
-The first draft memorial (the claude.ai page) stored stories in its own storage. Family members can re-add
-them through "Add to this chapter"; there were none yet when this site was built.

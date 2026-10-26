@@ -98,8 +98,33 @@ async def test_serves_last_good_copy_when_memorial_service_is_down(client):
 
 
 async def test_family_invite_and_robots(client):
-    assert (await client.get("/family")).status_code == 200
+    family = await client.get("/family")
+    assert family.status_code == 200
+    assert "Save decision" not in family.text and "r-note" not in family.text
     assert (await client.get("/invite")).status_code == 200
     robots = (await client.get("/robots.txt")).text
     assert "Disallow: /family" in robots
     assert (await client.get("/static/memorial.js")).status_code == 200
+
+
+@respx.mock
+async def test_family_colour_choice_and_preview_bar(client):
+    from app.main import app, templates
+
+    app.state.content._cache = None
+    story = {**STORY, "profile": {**STORY["profile"], "theme": "forest"}}
+    respx.get("http://memorial.internal/api/memorial/story").mock(return_value=httpx.Response(200, json=story))
+    respx.get("http://memorial.internal/api/memorial/tributes").mock(return_value=httpx.Response(200, json=[]))
+    respx.get("http://memorial.internal/api/memorial/candles").mock(
+        return_value=httpx.Response(200, json={"count": 0, "candles": []})
+    )
+    html = (await client.get("/")).text
+    assert 'data-palette="forest"' in html
+    assert "Private preview" not in html
+    templates.env.globals["site_preview"] = True
+    try:
+        app.state.content._cache = None
+        html = (await client.get("/")).text
+        assert "Private preview" in html and 'data-palette-choice="navy"' in html
+    finally:
+        templates.env.globals["site_preview"] = False

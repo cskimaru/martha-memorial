@@ -27,8 +27,11 @@ services:
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-${SITE_DOMAIN}}
       ACME_EMAIL: ${ACME_EMAIL}
+    env_file:
+      - path: ./deploy/generated/caddy.env
+        required: false
     volumes:
-      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./deploy/caddy:/etc/caddy:ro
       - caddy-data:/data
       - caddy-config:/config
     networks: [edge]
@@ -48,6 +51,7 @@ services:
       <<: *service-env
       MEMORIAL_URL: http://memorial:8000
       ASSET_VERSION: ${IMAGE_TAG:-latest}
+      SITE_PREVIEW: ${SITE_PREVIEW:-false}
     networks: [edge, monitoring]
     deploy: { resources: { limits: { memory: 256M } } }
 

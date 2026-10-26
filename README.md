@@ -36,7 +36,9 @@ Sign in at http://localhost:8080/family, invite family members, and start fillin
 1. A small Linux server (2 vCPU, 4 GB RAM, 40 GB disk is plenty) with Docker installed.
 2. A domain name with an `A` record pointing at the server. Open ports 80 and 443.
 3. On the server: clone this repository, `make init`, set `SITE_DOMAIN` and `ACME_EMAIL` in `.env`, `make init` again.
-4. `make up`. Caddy fetches the HTTPS certificate automatically.
+4. `make up`. Caddy fetches the HTTPS certificate automatically. The site starts in **private preview**:
+   password-protected, with a colour switcher for reviewers. `make init` prints the password. See
+   [docs/runbook.md](docs/runbook.md#private-preview-then-launch) for reviewing and launching.
 5. `make create-owner email=you@example.com name="Anita"`.
 6. Copy `secrets/backup_passphrase` somewhere safe away from the server.
 

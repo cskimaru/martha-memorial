@@ -8,6 +8,9 @@
 }
 
 {$SITE_ADDRESS} {
+	# Before launch the whole site sits behind a password (SITE_PREVIEW=true in .env).
+	import access-{$SITE_MODE:public}.caddy
+
 	encode zstd gzip
 
 	header {

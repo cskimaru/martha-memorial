@@ -3,10 +3,13 @@
 
     python3 scripts/smoke_test.py https://martha.example.com
 
+While the site is in private preview, set PREVIEW_PASSWORD so the checks can get past the password.
 Exits non-zero if any check fails. Used after every deployment.
 """
 
+import base64
 import json
+import os
 import ssl
 import sys
 import time
@@ -17,13 +20,17 @@ BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8080").rstrip("/
 if not BASE.startswith(("http://", "https://")):
     sys.exit("Give an http:// or https:// address.")
 CTX = ssl.create_default_context()
+HEADERS = {"User-Agent": "memorial-smoke-test"}
+if os.environ.get("PREVIEW_PASSWORD"):
+    login = base64.b64encode(f"family:{os.environ['PREVIEW_PASSWORD']}".encode()).decode()
+    HEADERS["Authorization"] = f"Basic {login}"
 failures: list[str] = []
 
 
 def get(path: str, retries: int = 1) -> tuple[int, dict, bytes]:
     for attempt in range(retries):
         try:
-            req = urllib.request.Request(BASE + path, headers={"User-Agent": "memorial-smoke-test"})  # noqa: S310
+            req = urllib.request.Request(BASE + path, headers=HEADERS)  # noqa: S310
             with urllib.request.urlopen(req, timeout=15, context=CTX) as r:  # noqa: S310
                 return r.status, dict(r.headers), r.read()
         except urllib.error.HTTPError as e:
