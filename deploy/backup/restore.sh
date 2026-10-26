@@ -16,7 +16,7 @@ gpg --batch --quiet --decrypt --passphrase-file /run/secrets/backup_passphrase "
 
 PGPASSWORD="$(cat /run/secrets/pg_superuser_password)"
 export PGPASSWORD
-for db in auth memorial media contributions; do
+for db in auth memorial media; do
   echo "Restoring $db"
   pg_restore -h postgres -U postgres --clean --if-exists --no-owner --role="$db" -d "$db" "$WORK/$db.dump"
 done

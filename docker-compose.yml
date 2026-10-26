@@ -47,7 +47,6 @@ services:
     environment:
       <<: *service-env
       MEMORIAL_URL: http://memorial:8000
-      CONTRIBUTIONS_URL: http://contributions:8000
       ASSET_VERSION: ${IMAGE_TAG:-latest}
     networks: [edge, monitoring]
     deploy: { resources: { limits: { memory: 256M } } }
@@ -108,56 +107,6 @@ services:
     depends_on: *db-deps
     deploy: { resources: { limits: { memory: 768M } } }
 
-  contributions:
-    <<: *service
-    image: ${REGISTRY:-ghcr.io/owner/martha-memorial}/contributions:${IMAGE_TAG:-latest}
-    build: { context: ., dockerfile: deploy/docker/Dockerfile.service, args: { SERVICE: contributions } }
-    environment: &contrib-env
-      <<: *service-env
-      MPESA_ENABLED: ${MPESA_ENABLED:-false}
-      MPESA_ENV: ${MPESA_ENV:-sandbox}
-      MPESA_SHORTCODE: ${MPESA_SHORTCODE:-}
-      MPESA_TRANSACTION_TYPE: ${MPESA_TRANSACTION_TYPE:-CustomerPayBillOnline}
-      MPESA_PARTY_B: ${MPESA_PARTY_B:-}
-      MPESA_ACCOUNT_REFERENCE: ${MPESA_ACCOUNT_REFERENCE:-MarthaOngosi}
-      MPESA_CALLBACK_ALLOWED_IPS: ${MPESA_CALLBACK_ALLOWED_IPS:-}
-      PUBLIC_SHOW_AMOUNTS: ${PUBLIC_SHOW_AMOUNTS:-false}
-      DISPLAY_PAYBILL: ${DISPLAY_PAYBILL:-}
-      DISPLAY_ACCOUNT: ${DISPLAY_ACCOUNT:-}
-      MIN_AMOUNT: ${MIN_AMOUNT:-10}
-      MAX_AMOUNT: ${MAX_AMOUNT:-250000}
-    secrets: &contrib-secrets
-      - { source: contributions_database_url, target: database_url }
-      - { source: redis_url, target: redis_url }
-      - { source: jwt_public_pem, target: jwt_public_key }
-      - { source: ip_hash_salt, target: ip_hash_salt }
-      - { source: phone_hash_pepper, target: phone_hash_pepper }
-      - { source: mpesa_consumer_key, target: mpesa_consumer_key }
-      - { source: mpesa_consumer_secret, target: mpesa_consumer_secret }
-      - { source: mpesa_passkey, target: mpesa_passkey }
-      - { source: mpesa_callback_token, target: mpesa_callback_token }
-    networks: [edge, backend, monitoring]
-    depends_on: *db-deps
-    deploy: { resources: { limits: { memory: 384M } } }
-
-  contributions-worker:
-    <<: *service
-    image: ${REGISTRY:-ghcr.io/owner/martha-memorial}/contributions:${IMAGE_TAG:-latest}
-    command: ["python", "-m", "app.worker"]
-    environment:
-      <<: *contrib-env
-    secrets: *contrib-secrets
-    networks: [edge, backend, monitoring]
-    depends_on:
-      contributions: { condition: service_healthy }
-    healthcheck:
-      test: ["CMD", "python", "-c", "import os,time,sys; sys.exit(0 if time.time()-os.path.getmtime('/tmp/reconciler-heartbeat')<180 else 1)"]
-      interval: 30s
-      timeout: 5s
-      start_period: 60s
-      retries: 3
-    deploy: { resources: { limits: { memory: 256M } } }
-
   # ---------- Data ----------
   postgres:
     image: postgres:16.6-alpine
@@ -170,7 +119,6 @@ services:
       - pg_auth_password
       - pg_memorial_password
       - pg_media_password
-      - pg_contributions_password
       - pg_exporter_password
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -315,24 +263,17 @@ secrets:
   jwt_private_pem: { file: ./secrets/jwt_private.pem }
   jwt_public_pem: { file: ./secrets/jwt_public.pem }
   ip_hash_salt: { file: ./secrets/ip_hash_salt }
-  phone_hash_pepper: { file: ./secrets/phone_hash_pepper }
   redis_password: { file: ./secrets/redis_password }
   redis_url: { file: ./secrets/redis_url }
   pg_superuser_password: { file: ./secrets/pg_superuser_password }
   pg_auth_password: { file: ./secrets/pg_auth_password }
   pg_memorial_password: { file: ./secrets/pg_memorial_password }
   pg_media_password: { file: ./secrets/pg_media_password }
-  pg_contributions_password: { file: ./secrets/pg_contributions_password }
   pg_exporter_password: { file: ./secrets/pg_exporter_password }
   auth_database_url: { file: ./secrets/auth_database_url }
   memorial_database_url: { file: ./secrets/memorial_database_url }
   media_database_url: { file: ./secrets/media_database_url }
-  contributions_database_url: { file: ./secrets/contributions_database_url }
   s3_secret_key: { file: ./secrets/s3_secret_key }
-  mpesa_consumer_key: { file: ./secrets/mpesa_consumer_key }
-  mpesa_consumer_secret: { file: ./secrets/mpesa_consumer_secret }
-  mpesa_passkey: { file: ./secrets/mpesa_passkey }
-  mpesa_callback_token: { file: ./secrets/mpesa_callback_token }
   backup_passphrase: { file: ./secrets/backup_passphrase }
   offsite_s3_access_key: { file: ./secrets/offsite_s3_access_key }
   offsite_s3_secret_key: { file: ./secrets/offsite_s3_secret_key }

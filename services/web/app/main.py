@@ -95,7 +95,6 @@ async def home(request: Request) -> HTMLResponse:
             "photos": photos,
             "tributes": data.tributes,
             "candles": data.candles,
-            "giving": data.giving,
             "degraded": data.degraded,
         },
         headers=NO_STORE if signed_in else {"Cache-Control": "public, max-age=15"},

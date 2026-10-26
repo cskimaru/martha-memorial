@@ -1,7 +1,7 @@
-/* Public memorial page: tributes, candles, M-Pesa giving, lightbox, and family editing. */
+/* Public memorial page: tributes, candles, lightbox, and family editing. */
 (function () {
   "use strict";
-  const { api, me, h, toast, hasRole, initOverlays, confirmClick, remember, newKey } = window.MM;
+  const { api, me, h, toast, hasRole, initOverlays, confirmClick, remember } = window.MM;
   const $ = (id) => document.getElementById(id);
   initOverlays();
 
@@ -16,7 +16,7 @@
   });
 
   // ---- Prefill names ----
-  ["t-name", "c-name", "g-name"].forEach((id) => { const el = $(id); if (el && !el.value) el.value = remember("name"); });
+  ["t-name", "c-name"].forEach((id) => { const el = $(id); if (el && !el.value) el.value = remember("name"); });
 
   function formError(statusEl, err) { statusEl.textContent = err.message; statusEl.className = "err"; }
 
@@ -56,49 +56,6 @@
       st.className = "hint"; st.textContent = "Your candle is lit.";
     } catch (e) { formError(st, e); } finally { btn.disabled = false; }
   });
-
-  // ---- M-Pesa giving ----
-  const gf = $("give-form");
-  if (gf) {
-    let pendingKey = null, pollTimer = null;
-    const gs = $("g-status"), gb = $("g-submit");
-    const show = (msg, kind) => { gs.hidden = false; gs.textContent = msg; gs.className = "notice" + (kind ? " " + kind : ""); };
-    gf.addEventListener("input", () => { pendingKey = null; });
-    gf.addEventListener("submit", async (ev) => {
-      ev.preventDefault();
-      const min = Number(gf.dataset.min), max = Number(gf.dataset.max);
-      const amount = Number(String($("g-amount").value).replace(/[,\s]/g, ""));
-      if (!Number.isInteger(amount) || amount < min || amount > max) { show(`Enter a whole amount between KES ${min.toLocaleString()} and KES ${max.toLocaleString()}.`, "bad"); return; }
-      const body = { phone: $("g-phone").value, amount, name: $("g-name").value.trim(), message: $("g-msg").value.trim(), show_name: $("g-show").checked, website: $("g-website").value };
-      if (!body.name) { show("Add your name so the family knows who to thank.", "bad"); return; }
-      // The same key is reused if this exact submission is retried, so a double tap never sends two prompts.
-      pendingKey = pendingKey || newKey();
-      gb.disabled = true;
-      try {
-        const r = await api("POST", "/api/contributions/mpesa/stk", body, { headers: { "Idempotency-Key": pendingKey } });
-        remember("name", body.name);
-        show(r.message);
-        poll(r.id, Date.now());
-      } catch (e) { show(e.message, "bad"); gb.disabled = false; }
-    });
-    function poll(id, started) {
-      clearTimeout(pollTimer);
-      pollTimer = setTimeout(async () => {
-        try {
-          const r = await api("GET", `/api/contributions/${id}/status`);
-          if (r.status === "pending" || r.status === "verifying") {
-            if (Date.now() - started < 4 * 60 * 1000) { show(r.message); return poll(id, started); }
-            show("We haven't heard back from M-Pesa yet. If you completed the payment, it will be confirmed shortly.");
-          } else {
-            show(r.message, r.status === "confirmed" ? "ok" : "bad");
-            pendingKey = null;
-            if (r.status === "confirmed") gf.reset();
-          }
-        } catch (e) { if (Date.now() - started < 4 * 60 * 1000) return poll(id, started); }
-        gb.disabled = false;
-      }, 3000);
-    }
-  }
 
   // ---- Family editing ----
   (async function editorMode() {

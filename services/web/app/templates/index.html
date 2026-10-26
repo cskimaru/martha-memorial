@@ -34,7 +34,6 @@
     <div class="hero-actions">
       <a class="btn" href="#tributes">Leave a tribute</a>
       <a class="btn ghost" href="#candles">Light a candle</a>
-      {% if giving and giving.giving_open %}<a class="btn ghost" href="#give">Support the family</a>{% endif %}
       <button class="btn ghost editor-only" id="edit-profile" type="button" hidden>Edit her details</button>
     </div>
   </div>
@@ -43,7 +42,6 @@
 <nav class="toc" aria-label="Chapters"><div class="wrap wide">
   {% for c in chapters %}<a href="#ch-{{ c.slug }}">{{ c.title }}</a>{% endfor %}
   <a href="#gallery-sec">Gallery</a><a href="#tributes">Tributes</a><a href="#candles">Candles</a>
-  {% if giving %}<a href="#give">Support the family</a>{% endif %}
 </div></nav>
 
 {% if degraded %}
@@ -148,46 +146,6 @@
     {% for c in candles.candles %}<div class="candle"><span class="c" aria-hidden="true"></span><span><strong>{{ c.name }}</strong>{% if c.note %} — {{ c.note }}{% endif %}</span></div>{% endfor %}
   </div>
 </div></section>
-
-{% if giving %}
-<section class="section" id="give"><div class="wrap give">
-  <div class="section-head"><span class="label">Harambee</span><h2>Support the Family</h2>
-    <p>Contributions help the family with the funeral and the costs that follow. Every contribution is recorded and confirmed with M-Pesa before it is counted.</p></div>
-  <div class="give-total">
-    <span class="amt">KES {{ "{:,}".format(giving.total) }}</span>
-    <span class="hint">received from {{ giving.count }} contribution{{ "" if giving.count == 1 else "s" }}</span>
-  </div>
-  {% if giving.paybill %}
-  <div class="paybill">
-    <div><span class="label">M-Pesa Paybill</span><span class="val">{{ giving.paybill }}</span></div>
-    {% if giving.account %}<div><span class="label">Account</span><span class="val">{{ giving.account }}</span></div>{% endif %}
-    <div><span class="label">Before you pay</span><span class="hint">Check that M-Pesa shows the family's registered name. Never share your PIN with anyone.</span></div>
-  </div>
-  {% endif %}
-  {% if giving.giving_open %}
-  <form class="inline" id="give-form" novalidate data-min="{{ giving.min_amount }}" data-max="{{ giving.max_amount }}">
-    <p class="hint">Pay from your phone: enter your Safaricom number and you'll get an M-Pesa prompt to confirm with your PIN. This website never sees your PIN.</p>
-    <div class="row">
-      <div class="field"><label for="g-phone">Safaricom number</label><input id="g-phone" name="phone" inputmode="tel" autocomplete="tel" required placeholder="0712 345 678" maxlength="20"></div>
-      <div class="field"><label for="g-amount">Amount (KES)</label><input id="g-amount" name="amount" inputmode="numeric" required pattern="[0-9]*" placeholder="1000"></div>
-    </div>
-    <div class="row">
-      <div class="field"><label for="g-name">Your name</label><input id="g-name" name="name" required maxlength="80" autocomplete="name"></div>
-      <div class="field"><label for="g-msg">Message (optional)</label><input id="g-msg" name="message" maxlength="300"></div>
-    </div>
-    <label class="check"><input type="checkbox" id="g-show" checked> Show my name in the list of contributors</label>
-    <div class="hp" aria-hidden="true"><label for="g-website">Leave this empty</label><input id="g-website" name="website" tabindex="-1" autocomplete="off"></div>
-    <div class="form-actions"><button class="btn" type="submit" id="g-submit">Send M-Pesa prompt</button></div>
-    <p class="notice" id="g-status" role="status" hidden></p>
-  </form>
-  {% endif %}
-  {% if giving.contributors %}
-  <div class="stack"><span class="label">With gratitude to</span>
-    <div class="names">{% for c in giving.contributors %}<span>{{ c.name }}{% if c.amount %} · KES {{ "{:,}".format(c.amount) }}{% endif %}</span>{% endfor %}</div>
-  </div>
-  {% endif %}
-</div></section>
-{% endif %}
 
 <footer><div class="wrap">
   <p>This memorial is kept by Martha's family. Family members invited by the family can add stories, photographs and chapters. Tributes from visitors appear once the family has approved them.</p>

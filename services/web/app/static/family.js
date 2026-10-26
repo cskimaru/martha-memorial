@@ -1,11 +1,10 @@
-/* Family dashboard: sign in, approve tributes, invite family, contributions ledger, account. */
+/* Family dashboard: sign in, approve tributes, invite family, account. */
 (function () {
   "use strict";
   const { api, me, h, toast, hasRole, initOverlays, confirmClick } = window.MM;
   const $ = (id) => document.getElementById(id);
   const fmt = (d) => (d ? new Date(d).toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
-  const kes = (n) => (n == null ? "—" : "KES " + Number(n).toLocaleString());
-  const ROLE_NAMES = { owner: "Owner", editor: "Editor", treasurer: "Treasurer" };
+  const ROLE_NAMES = { owner: "Owner", editor: "Editor" };
   initOverlays();
   let user = null;
 
@@ -27,7 +26,7 @@
     document.querySelectorAll("[data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === name)));
     document.querySelectorAll("[data-panel]").forEach((p) => { p.hidden = p.dataset.panel !== name; });
     history.replaceState(null, "", "#" + name);
-    ({ tributes: loadTributes, people: loadPeople, ledger: loadLedger, account: () => {} })[name]();
+    ({ tributes: loadTributes, people: loadPeople, account: () => {} })[name]();
   }
 
   // ---- Sign in / out ----
@@ -95,52 +94,6 @@
   $("copy-invite").addEventListener("click", async () => {
     const input = $("invite-url");
     try { await navigator.clipboard.writeText(input.value); toast("Link copied"); } catch (e) { input.select(); toast("Select the link and copy it"); }
-  });
-
-  // ---- Ledger ----
-  let reviewing = null;
-  async function loadLedger() {
-    try {
-      const data = await api("GET", "/api/contributions/ledger");
-      const bs = data.by_status;
-      $("ledger-kpis").replaceChildren(
-        h("div", null, h("span", { class: "label" }, "Confirmed total"), h("span", { class: "v" }, kes(data.total_confirmed))),
-        h("div", null, h("span", { class: "label" }, "Confirmed"), h("span", { class: "v" }, bs.confirmed || 0)),
-        h("div", null, h("span", { class: "label" }, "Waiting on M-Pesa"), h("span", { class: "v" }, (bs.pending || 0) + (bs.verifying || 0))),
-        h("div", null, h("span", { class: "label" }, "Needs review"), h("span", { class: "v" }, bs.mismatch || 0)));
-      $("ledger-body").replaceChildren(...data.rows.map((r) => {
-        const review = (r.status === "mismatch" || (r.status === "confirmed" && r.method !== "mpesa_stk"))
-          ? h("button", { class: "btn link", type: "button", onclick: () => openReview(r) }, "Review") : null;
-        return h("tr", null, h("td", null, fmt(r.created_at)), h("td", null, r.contributor_name),
-          h("td", null, { mpesa_stk: "M-Pesa prompt", mpesa_manual: "M-Pesa direct", cash: "Cash", bank: "Bank" }[r.method] || r.method),
-          h("td", null, h("span", { class: "pill " + r.status }, r.status)),
-          h("td", { class: "num" }, kes(r.amount_received != null ? r.amount_received : r.amount_requested)),
-          h("td", null, r.mpesa_receipt || r.reference || "—"), h("td", null, r.phone_masked || "—"), h("td", null, review));
-      }));
-    } catch (e) { toast(e.message); }
-  }
-  function openReview(r) {
-    reviewing = r;
-    $("review-summary").textContent = `${r.contributor_name}: requested ${kes(r.amount_requested)}, received ${kes(r.amount_received)} (${r.status}).`;
-    $("r-to").replaceChildren(...(r.status === "mismatch"
-      ? [h("option", { value: "confirmed" }, "Confirm: the amount was received"), h("option", { value: "void" }, "Withdraw this entry")]
-      : [h("option", { value: "void" }, "Withdraw this entry")]));
-    $("r-note").value = ""; $("r-err").textContent = ""; $("review-ov").hidden = false;
-  }
-  $("review-form").addEventListener("submit", async (ev) => {
-    ev.preventDefault();
-    try { await api("POST", `/api/contributions/${reviewing.id}/review`, { to: $("r-to").value, note: $("r-note").value.trim() }); $("review-ov").hidden = true; toast("Decision saved"); loadLedger(); }
-    catch (e) { $("r-err").textContent = e.message; }
-  });
-  $("manual-form").addEventListener("submit", async (ev) => {
-    ev.preventDefault();
-    $("m-err").textContent = "";
-    const amount = Number(String($("m-amount").value).replace(/[,\s]/g, ""));
-    if (!Number.isInteger(amount) || amount <= 0) { $("m-err").textContent = "Enter the amount in whole shillings."; return; }
-    try {
-      await api("POST", "/api/contributions/manual", { method: $("m-method").value, amount, name: $("m-name").value.trim(), reference: $("m-ref").value.trim(), show_name: $("m-show").checked });
-      ev.target.reset(); toast("Contribution recorded"); loadLedger();
-    } catch (e) { $("m-err").textContent = e.message; }
   });
 
   // ---- Account ----

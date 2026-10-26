@@ -13,7 +13,7 @@ PGPASSWORD="$(cat /run/secrets/pg_superuser_password)"
 export PGPASSWORD
 echo "[$STAMP] Dumping databases"
 pg_dumpall -h postgres -U postgres --globals-only > "$WORK/globals.sql"
-for db in auth memorial media contributions; do
+for db in auth memorial media; do
   pg_dump -h postgres -U postgres -Fc -d "$db" -f "$WORK/$db.dump"
   pg_restore --list "$WORK/$db.dump" > /dev/null   # verify the dump is readable
 done

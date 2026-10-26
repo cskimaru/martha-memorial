@@ -16,7 +16,7 @@
       "gridPos": {
         "x": 0,
         "y": 0,
-        "w": 6,
+        "w": 12,
         "h": 4
       },
       "datasource": {
@@ -46,85 +46,13 @@
       ]
     },
     {
-      "id": 2,
-      "type": "stat",
-      "title": "Confirmed contributions (KES)",
-      "gridPos": {
-        "x": 6,
-        "y": 0,
-        "w": 6,
-        "h": 4
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "colorMode": "value",
-        "graphMode": "area"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "contributions_confirmed_kes"
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "type": "stat",
-      "title": "Payments waiting on M-Pesa",
-      "gridPos": {
-        "x": 12,
-        "y": 0,
-        "w": 6,
-        "h": 4
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "colorMode": "value",
-        "graphMode": "area"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(contributions_open)"
-        }
-      ]
-    },
-    {
       "id": 4,
       "type": "stat",
       "title": "Hours since last backup",
       "gridPos": {
-        "x": 18,
+        "x": 12,
         "y": 0,
-        "w": 6,
+        "w": 12,
         "h": 4
       },
       "datasource": {
@@ -247,74 +175,12 @@
       ]
     },
     {
-      "id": 8,
-      "type": "timeseries",
-      "title": "M-Pesa callbacks",
-      "gridPos": {
-        "x": 12,
-        "y": 12,
-        "w": 12,
-        "h": 8
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "fillOpacity": 10
-          }
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by (outcome) (increase(mpesa_callbacks_total[1h]))",
-          "legendFormat": "{{outcome}}"
-        }
-      ]
-    },
-    {
-      "id": 9,
-      "type": "timeseries",
-      "title": "Contribution status changes",
-      "gridPos": {
-        "x": 0,
-        "y": 20,
-        "w": 12,
-        "h": 8
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "fillOpacity": 10
-          }
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by (to_status) (increase(contributions_status_changes_total[1h]))",
-          "legendFormat": "{{to_status}}"
-        }
-      ]
-    },
-    {
       "id": 10,
       "type": "timeseries",
       "title": "Server resources",
       "gridPos": {
         "x": 12,
-        "y": 20,
+        "y": 12,
         "w": 12,
         "h": 8
       },

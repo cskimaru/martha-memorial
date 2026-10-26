@@ -7,7 +7,7 @@ Commands run from the repository folder on the server.
 | Task | Command |
 |---|---|
 | See what's running | `make ps` |
-| Follow logs | `make logs s=contributions` (any service name) |
+| Follow logs | `make logs s=memorial` (any service name) |
 | Restart one service | `docker compose restart memorial` |
 | Take a backup now | `make backup-now` |
 | Check the public site | `make smoke url=https://<domain>` |
@@ -37,10 +37,6 @@ http://localhost:9093 (current alerts).
 | Alert | What to do |
 |---|---|
 | SiteDown / ServiceDown | `make ps`, `make logs s=<service>`; `docker compose up -d` restarts anything stopped |
-| PaymentsStuck | `make logs s=contributions-worker`. Usually Daraja is down or the keys expired; payments settle on their own once it recovers |
-| PaymentAmountMismatch | Treasurer reviews it in the family area against the M-Pesa statement |
-| OrphanMpesaCallback | A payment arrived that no prompt matches. Find it on the statement and record it manually |
-| CallbackProbing | Someone is guessing the callback address. Harmless, but you can set `MPESA_CALLBACK_ALLOWED_IPS` |
 | BackupMissing | `make logs s=backup`; then `make backup-now` |
 | CertificateExpiringSoon | `make logs s=caddy`; check DNS still points at the server and port 80 is open |
 | DiskFillingUp | `docker system prune`; lower `BACKUP_KEEP_DAYS`; grow the disk |
@@ -78,7 +74,6 @@ into `backups/archive/`, `make up`, then `make restore file=...`.
 
 ## Rotating secrets
 
-* M-Pesa keys: replace the files in `secrets/`, then `docker compose up -d contributions contributions-worker`.
 * JWT keys (signs everyone out): delete `secrets/jwt_*.pem`, `make init`, `docker compose up -d`.
 * Database passwords: change the role password in Postgres first (`ALTER ROLE ... PASSWORD`), update
   `secrets/pg_<service>_password`, `make init` (regenerates the connection strings), `docker compose up -d`.

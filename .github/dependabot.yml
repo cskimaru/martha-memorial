@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: pip
-    directories: ["/libs/common", "/services/auth", "/services/memorial", "/services/media", "/services/contributions", "/services/web", "/"]
+    directories: ["/libs/common", "/services/auth", "/services/memorial", "/services/media", "/services/web", "/"]
     schedule: { interval: weekly }
     groups: { python: { patterns: ["*"] } }
   - package-ecosystem: docker

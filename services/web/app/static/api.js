@@ -94,11 +94,6 @@
 
   function remember(k, v) { try { if (v === undefined) return localStorage.getItem("mm." + k) || ""; localStorage.setItem("mm." + k, v); } catch (e) { return ""; } }
 
-  function newKey() {
-    if (window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g, "");
-    const a = new Uint8Array(16); crypto.getRandomValues(a);
-    return Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("");
-  }
 
-  window.MM = { api, me, h, toast, hasRole, initOverlays, confirmClick, remember, newKey, ApiError };
+  window.MM = { api, me, h, toast, hasRole, initOverlays, confirmClick, remember, ApiError };
 })();

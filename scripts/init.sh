@@ -20,13 +20,12 @@ gen() { local f="secrets/$1"; if [ ! -s "$f" ]; then openssl rand -hex "${2:-32}
 placeholder() { [ -e "secrets/$1" ] || : > "secrets/$1"; }
 
 echo "Secrets:"
-for n in ip_hash_salt phone_hash_pepper redis_password pg_superuser_password pg_auth_password \
-         pg_memorial_password pg_media_password pg_contributions_password pg_exporter_password \
-         grafana_admin_password mpesa_callback_token; do
+for n in ip_hash_salt redis_password pg_superuser_password pg_auth_password \
+         pg_memorial_password pg_media_password pg_exporter_password grafana_admin_password; do
   gen "$n"
 done
 gen backup_passphrase 48
-for n in s3_secret_key mpesa_consumer_key mpesa_consumer_secret mpesa_passkey offsite_s3_access_key offsite_s3_secret_key smtp_password; do
+for n in s3_secret_key offsite_s3_access_key offsite_s3_secret_key smtp_password; do
   placeholder "$n"
 done
 if [ ! -s secrets/jwt_private.pem ]; then
@@ -34,7 +33,7 @@ if [ ! -s secrets/jwt_private.pem ]; then
   openssl pkey -in secrets/jwt_private.pem -pubout -out secrets/jwt_public.pem
   echo "  generated JWT signing key pair"
 fi
-for svc in auth memorial media contributions; do
+for svc in auth memorial media; do
   printf 'postgresql+asyncpg://%s:%s@postgres:5432/%s' "$svc" "$(cat "secrets/pg_${svc}_password")" "$svc" > "secrets/${svc}_database_url"
 done
 printf 'redis://:%s@redis:6379/0' "$(cat secrets/redis_password)" > secrets/redis_url

@@ -10,7 +10,6 @@ services:
       ENVIRONMENT: development
       SITE_ORIGIN: http://localhost:8080
       MEMORIAL_URL: http://memorial:8000
-      CONTRIBUTIONS_URL: http://contributions:8000
   auth:
     environment:
       ENVIRONMENT: development
@@ -19,8 +18,4 @@ services:
   memorial:
     environment: { ENVIRONMENT: development, SITE_ORIGIN: "http://localhost:8080" }
   media:
-    environment: { ENVIRONMENT: development, SITE_ORIGIN: "http://localhost:8080" }
-  contributions:
-    environment: { ENVIRONMENT: development, SITE_ORIGIN: "http://localhost:8080" }
-  contributions-worker:
     environment: { ENVIRONMENT: development, SITE_ORIGIN: "http://localhost:8080" }

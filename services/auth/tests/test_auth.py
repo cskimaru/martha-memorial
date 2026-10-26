@@ -114,7 +114,7 @@ async def test_logout_clears_session(client, owner):
 
 async def test_owner_manages_people_and_invitations(client, owner):
     await login(client, owner["email"], owner["password"])
-    r = await client.post("/api/auth/invitations", json={"email": "aunt@example.com", "roles": ["treasurer"]})
+    r = await client.post("/api/auth/invitations", json={"email": "aunt@example.com", "roles": ["editor"]})
     inv = r.json()
     assert r.status_code == 201
     dup = await client.post("/api/auth/invitations", json={"email": "owner@example.com"})

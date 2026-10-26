@@ -7,7 +7,7 @@ groups:
         labels: { severity: critical }
         annotations: { summary: "The memorial website is not reachable from the internet." }
       - alert: ServiceDown
-        expr: up{job=~"services|reconciler"} == 0
+        expr: up{job="services"} == 0
         for: 2m
         labels: { severity: critical }
         annotations: { summary: "{{ $labels.service }} is down." }
@@ -29,32 +29,6 @@ groups:
         for: 1h
         labels: { severity: warning }
         annotations: { summary: "The HTTPS certificate expires in under 14 days (automatic renewal may be failing)." }
-
-  - name: payments
-    rules:
-      - alert: PaymentsStuck
-        expr: contributions_stale_open > 0
-        for: 15m
-        labels: { severity: critical }
-        annotations: { summary: "{{ $value }} M-Pesa payments have been unsettled for too long. Check the reconciler and Daraja." }
-      - alert: PaymentAmountMismatch
-        expr: contributions_mismatch > 0
-        for: 1m
-        labels: { severity: warning }
-        annotations: { summary: "A payment amount differs from what was requested. The treasurer should review it." }
-      - alert: OrphanMpesaCallback
-        expr: increase(mpesa_callbacks_total{outcome=~"orphan|duplicate_receipt"}[30m]) > 0
-        labels: { severity: warning }
-        annotations: { summary: "M-Pesa sent a callback we couldn't match. Check the ledger against the M-Pesa statement." }
-      - alert: CallbackProbing
-        expr: increase(mpesa_callbacks_total{outcome=~"bad_token|ip_refused"}[15m]) > 20
-        labels: { severity: warning }
-        annotations: { summary: "Someone is sending fake requests to the M-Pesa callback address." }
-      - alert: ReconcilerStalled
-        expr: time() - contributions_reconciler_last_run_timestamp > 300
-        for: 5m
-        labels: { severity: critical }
-        annotations: { summary: "The payment reconciler has not run for 5 minutes." }
 
   - name: platform
     rules:

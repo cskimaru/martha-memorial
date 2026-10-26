@@ -15,8 +15,7 @@ REFRESH_COOKIE = "mm_refresh"
 
 ROLE_OWNER = "owner"
 ROLE_EDITOR = "editor"
-ROLE_TREASURER = "treasurer"
-ALL_ROLES = frozenset({ROLE_OWNER, ROLE_EDITOR, ROLE_TREASURER})
+ALL_ROLES = frozenset({ROLE_OWNER, ROLE_EDITOR})
 
 
 @dataclass(frozen=True)

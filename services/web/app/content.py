@@ -1,4 +1,4 @@
-"""Fetches page content from the memorial and contributions services.
+"""Fetches page content from the memorial service.
 
 The rendered page for anonymous visitors is cached briefly so a burst of
 visitors (for example after the link is shared on the day of the burial)
@@ -23,7 +23,6 @@ class PageData:
     story: dict | None = None
     tributes: list = field(default_factory=list)
     candles: dict = field(default_factory=lambda: {"count": 0, "candles": []})
-    giving: dict | None = None
     degraded: bool = False
 
 
@@ -45,16 +44,15 @@ class ContentClient:
 
     async def fetch(self, headers: dict | None = None) -> PageData:
         h = {k: v for k, v in (headers or {}).items() if v}
-        m, c = self.s.memorial_url, self.s.contributions_url
+        m = self.s.memorial_url
         results = await asyncio.gather(
             self._get(f"{m}/api/memorial/story", h),
             self._get(f"{m}/api/memorial/tributes", h),
             self._get(f"{m}/api/memorial/candles", h),
-            self._get(f"{c}/api/contributions/summary", h),
             return_exceptions=True,
         )
         data = PageData()
-        names = ("story", "tributes", "candles", "giving")
+        names = ("story", "tributes", "candles")
         for name, res in zip(names, results, strict=True):
             if isinstance(res, Exception):
                 log.warning("Upstream fetch failed", extra={"fields": {"part": name, "error": repr(res)}})

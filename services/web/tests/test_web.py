@@ -54,17 +54,6 @@ STORY = {
         },
     ],
 }
-GIVING = {
-    "giving_open": True,
-    "total": 125000,
-    "count": 12,
-    "currency": "KES",
-    "contributors": [{"name": "Kerubo", "amount": None, "message": ""}],
-    "paybill": "247247",
-    "account": "Martha",
-    "min_amount": 10,
-    "max_amount": 250000,
-}
 
 
 def mock_upstreams(story_status=200):
@@ -72,9 +61,6 @@ def mock_upstreams(story_status=200):
     respx.get("http://memorial.internal/api/memorial/tributes").mock(return_value=httpx.Response(200, json=[]))
     respx.get("http://memorial.internal/api/memorial/candles").mock(
         return_value=httpx.Response(200, json={"count": 3, "candles": []})
-    )
-    respx.get("http://contributions.internal/api/contributions/summary").mock(
-        return_value=httpx.Response(200, json=GIVING)
     )
 
 
@@ -91,7 +77,7 @@ async def test_home_renders_story_escaped_with_og_tags(client):
     assert 'property="og:title"' in html
     assert "<script>alert(1)</script>" not in html
     assert "&lt;script&gt;" in html
-    assert "KES 125,000" in html
+    assert "Support the family" not in html and "M-Pesa" not in html
     assert "Watch the burial service" in html
     assert "Chapter I" in html and "Chapter II" in html
 

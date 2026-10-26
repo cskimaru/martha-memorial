@@ -8,7 +8,6 @@ os.environ.update(
     SITE_ORIGIN="http://testserver",
     ENVIRONMENT="test",
     MEMORIAL_URL="http://memorial.internal",
-    CONTRIBUTIONS_URL="http://contributions.internal",
 )
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 

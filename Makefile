@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 COMPOSE := docker compose
 DEV := $(COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml
-SERVICES := auth memorial media contributions web
+SERVICES := auth memorial media web
 PY ?= python3
 
 .PHONY: help init up down down-apps dev dev-down logs ps migrate create-owner backup-now restore smoke test lint fmt build pull deploy
@@ -19,7 +19,7 @@ down:          ## Stop everything (data is kept)
 	$(COMPOSE) down
 
 down-apps:     ## Stop only the application services (for a restore)
-	$(COMPOSE) stop caddy web auth memorial media contributions contributions-worker
+	$(COMPOSE) stop caddy web auth memorial media
 
 pull:          ## Pull the images for IMAGE_TAG
 	$(COMPOSE) pull --ignore-buildable
@@ -33,7 +33,7 @@ dev:           ## Run locally on http://localhost:8080
 dev-down:
 	$(DEV) down
 
-logs:          ## Follow logs (make logs s=contributions)
+logs:          ## Follow logs (make logs s=memorial)
 	$(COMPOSE) logs -f --tail=200 $(s)
 
 ps:

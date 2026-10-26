@@ -45,8 +45,8 @@ class OriginCheckMiddleware(BaseHTTPMiddleware):
     """Reject cookie-authenticated writes that come from another site (CSRF).
 
     Cookies are also SameSite=Strict; this is a second, independent check.
-    Requests without the session cookie (e.g. the M-Pesa callback, which is
-    server to server) are not affected.
+    Requests without the session cookie, such as visitors' tributes and candles,
+    are not affected.
     """
 
     def __init__(self, app, site_origin: str) -> None:

@@ -1,24 +1,22 @@
 # Martha Kemunto Ongosi — Memorial
 
 A memorial website for Martha Kemunto Ongosi, mother of Anita. Her life is told in chapters that invited
-family members fill with stories and photographs. Visitors can leave tributes (approved by the family),
-light candles, and contribute to the family through M-Pesa.
+family members fill with stories and photographs. Visitors can leave tributes (approved by the family)
+and light candles. It is a place of remembrance only: no money is collected.
 
 ## What's in the box
 
 | Part | What it does |
 |---|---|
 | `services/web` | Renders the memorial page on the server (fast on phones, link previews on WhatsApp), the family area, and invitation sign-up |
-| `services/auth` | Family accounts by invitation, sign-in with lockout, rotating sessions, roles (owner, editor, treasurer) |
+| `services/auth` | Family accounts by invitation, sign-in with lockout, rotating sessions, roles (owner, editor) |
 | `services/memorial` | Her profile, life chapters, family stories, tributes with moderation, candles |
 | `services/media` | Photo uploads: every image is re-encoded, resized, and stripped of location data |
-| `services/contributions` | M-Pesa Express (STK push), an append-only ledger, a reconciler that settles every payment with Safaricom |
 | `libs/common` | Shared config, logging, auth checks, rate limiting, health and metrics |
 | `deploy/` | Caddy gateway (HTTPS), Postgres, backups, Prometheus, Alertmanager, Grafana |
 
 Read [docs/architecture.md](docs/architecture.md) for how the pieces fit, [docs/security.md](docs/security.md)
-for the protections, [docs/mpesa.md](docs/mpesa.md) before switching on giving, and
-[docs/runbook.md](docs/runbook.md) for day-to-day operation.
+for the protections, and [docs/runbook.md](docs/runbook.md) for day-to-day operation.
 
 ## Run it on your computer
 

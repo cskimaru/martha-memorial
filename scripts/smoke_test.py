@@ -53,9 +53,6 @@ if status == 200:
     chapters = json.loads(body).get("chapters", [])
     check("chapters are present", len(chapters) >= 1, f"{len(chapters)} chapters")
 
-status, _, _ = get("/api/contributions/summary")
-check("contributions API answers", status == 200, f"status {status}")
-
 status, _, _ = get("/api/auth/me")
 check("auth API refuses anonymous access", status == 401, f"status {status}")
 

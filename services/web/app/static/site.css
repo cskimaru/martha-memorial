@@ -1,6 +1,6 @@
 
 /* Martha Kemunto Ongosi memorial. Layout: a carved-stone hero band, then a reading column of numbered life chapters,
-   followed by gallery, tributes, candles and family support. */
+   followed by gallery, tributes and candles. */
 :root{
   --bg:#f2f0f3; --surface:#fbfafc; --ink:#231d2a; --muted:#675f70; --line:#dcd5df;
   --plum:#4a2954; --brass:#8f6f30; --hero-bg:#2a1c32; --hero-ink:#f2ebf4; --hero-muted:#c7b9cc;
@@ -141,13 +141,6 @@ body{margin:0}
 .notice{font-family:var(--ui);font-size:.9rem;padding:.7rem 1rem;border:1px solid var(--line);background:var(--surface)}
 .notice.ok{border-color:var(--brass)}
 .notice.bad{border-color:var(--danger);color:var(--danger)}
-.give{display:grid;gap:1.2rem}
-.give-total{display:flex;flex-wrap:wrap;gap:.4rem 1.6rem;align-items:baseline}
-.give-total .amt{font-family:var(--display);font-size:2rem;color:var(--plum);font-variant-numeric:tabular-nums}
-.paybill{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:1rem;border:1px solid var(--line);background:var(--surface);padding:1rem 1.2rem}
-.paybill div{display:flex;flex-direction:column;gap:.15rem}
-.paybill .val{font-family:var(--display);font-size:1.35rem;letter-spacing:.06em;font-variant-numeric:tabular-nums}
-.names{display:flex;flex-wrap:wrap;gap:.3rem .9rem;font-family:var(--ui);font-size:.88rem;color:var(--muted)}
 .check{display:flex;gap:.5rem;align-items:center;font-family:var(--ui);font-size:.85rem;color:var(--muted)}
 .check input{width:auto}
 .topbar{display:flex;justify-content:flex-end;gap:.8rem;font-family:var(--ui);font-size:.82rem}
@@ -168,10 +161,5 @@ th,td{text-align:left;padding:.55rem .7rem;border-bottom:1px solid var(--line);v
 th{color:var(--muted);font-weight:500;white-space:nowrap}
 td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .pill{display:inline-block;font-size:.74rem;padding:.1rem .5rem;border:1px solid var(--line);border-radius:999px;white-space:nowrap}
-.pill.confirmed{border-color:var(--brass);color:var(--brass)}
-.pill.mismatch,.pill.failed{border-color:var(--danger);color:var(--danger)}
-.kpis{display:flex;flex-wrap:wrap;gap:1rem 2.4rem}
-.kpis div{display:flex;flex-direction:column}
-.kpis .v{font-family:var(--display);font-size:1.6rem;font-variant-numeric:tabular-nums}
 .copy-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
 .copy-row input{flex:1;min-width:0}
