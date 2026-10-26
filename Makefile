@@ -4,10 +4,16 @@ DEV := $(COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml
 SERVICES := auth memorial media web
 PY ?= python3
 
-.PHONY: help init up down down-apps dev dev-down logs ps migrate create-owner backup-now restore smoke test lint fmt build pull deploy
+.PHONY: help share share-stop init up down down-apps dev dev-down logs ps migrate create-owner backup-now restore smoke test lint fmt build pull deploy
 
 help:          ## Show this help
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
+
+share:         ## Run on this computer and share a free public link (Cloudflare quick tunnel)
+	./scripts/share.sh
+
+share-stop:    ## Stop the shared copy (data is kept)
+	./scripts/share.sh stop
 
 init:          ## Create .env, secrets and generated config (safe to re-run)
 	./scripts/init.sh

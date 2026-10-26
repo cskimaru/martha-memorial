@@ -1,0 +1,28 @@
+# Share the site running on this computer through a free Cloudflare quick tunnel (no account, no card).
+# Use `make share`, which fills in PUBLIC_URL; see docs/share-from-your-computer.md.
+x-public: &public
+  SITE_ORIGIN: ${PUBLIC_URL:?run make share instead of using this file directly}
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:2025.10.0
+    command: ["tunnel", "--no-autoupdate", "--url", "http://caddy:80"]
+    restart: unless-stopped
+    networks: [edge]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    logging: { driver: json-file, options: { max-size: "5m", max-file: "2" } }
+
+  caddy:
+    environment:
+      CADDY_TRUSTED_PROXIES: private_ranges
+  web:
+    environment: *public
+  auth:
+    environment:
+      <<: *public
+      COOKIE_SECURE: "true"
+  memorial:
+    environment: *public
+  media:
+    environment: *public

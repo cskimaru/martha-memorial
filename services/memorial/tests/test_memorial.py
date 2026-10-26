@@ -142,3 +142,16 @@ async def test_family_chooses_colour_scheme(client):
         "/api/memorial/profile", json={"full_name": "Martha Kemunto Ongosi", "theme": "neon"}, headers=EDITOR
     )
     assert bad.status_code == 422
+
+
+async def test_rate_limit_follows_visitor_address_from_gateway(client):
+    # The gateway puts the visitor's address in X-Real-IP; separate visitors get separate limits.
+    for _ in range(5):
+        r = await client.post("/api/memorial/candles", json={"name": "A"}, headers={"x-real-ip": "198.51.100.1"})
+        assert r.status_code == 201
+    for _ in range(5):
+        await client.post("/api/memorial/candles", json={"name": "A"}, headers={"x-real-ip": "198.51.100.1"})
+    blocked = await client.post("/api/memorial/candles", json={"name": "A"}, headers={"x-real-ip": "198.51.100.1"})
+    assert blocked.status_code == 429
+    other = await client.post("/api/memorial/candles", json={"name": "B"}, headers={"x-real-ip": "198.51.100.2"})
+    assert other.status_code == 201

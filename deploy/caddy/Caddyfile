@@ -4,6 +4,10 @@
 	admin off
 	servers {
 		protocols h1 h2 h3
+		# Only when the site is shared through a Cloudflare Tunnel (make share) is the tunnel trusted to say
+		# who the real visitor is. Otherwise this is loopback, which never sends requests, so nobody is trusted.
+		trusted_proxies static {$CADDY_TRUSTED_PROXIES:127.0.0.1/32}
+		client_ip_headers CF-Connecting-IP
 	}
 }
 
@@ -43,18 +47,21 @@
 			reverse_proxy auth:8000 {
 				lb_try_duration 10s
 				header_up X-Request-ID {http.request.uuid}
+				header_up X-Real-IP {client_ip}
 			}
 		}
 		handle /api/memorial/* {
 			reverse_proxy memorial:8000 {
 				lb_try_duration 10s
 				header_up X-Request-ID {http.request.uuid}
+				header_up X-Real-IP {client_ip}
 			}
 		}
 		handle /api/media/* {
 			reverse_proxy media:8000 {
 				lb_try_duration 10s
 				header_up X-Request-ID {http.request.uuid}
+				header_up X-Real-IP {client_ip}
 			}
 		}
 		handle /static/* {
@@ -65,6 +72,7 @@
 			reverse_proxy web:8000 {
 				lb_try_duration 10s
 				header_up X-Request-ID {http.request.uuid}
+				header_up X-Real-IP {client_ip}
 			}
 		}
 	}

@@ -40,8 +40,12 @@ class RateLimiter:
 
 
 def client_ip(request: Request) -> str:
-    # The gateway (Caddy) is the only thing that can reach the services and it
-    # sets X-Forwarded-For; the last entry is the address Caddy saw.
+    # The gateway (Caddy) is the only thing that can reach the services. It sets X-Real-IP to the
+    # visitor's address (the real visitor behind a trusted Cloudflare Tunnel); fall back to the last
+    # X-Forwarded-For entry, which is the address Caddy saw.
+    real = request.headers.get("x-real-ip")
+    if real:
+        return real.strip()
     xff = request.headers.get("x-forwarded-for")
     if xff:
         return xff.split(",")[-1].strip()
