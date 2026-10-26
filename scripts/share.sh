@@ -20,7 +20,7 @@ fi
 ./scripts/init.sh >/dev/null
 
 echo "Opening the tunnel..."
-PUBLIC_URL=pending docker compose "${FILES[@]}" up -d --force-recreate cloudflared >/dev/null
+PUBLIC_URL=pending docker compose --progress plain "${FILES[@]}" up -d --force-recreate cloudflared >/dev/null
 url=""
 for _ in $(seq 60); do
   url=$(PUBLIC_URL=pending docker compose "${FILES[@]}" logs cloudflared 2>&1 | grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' | tail -1 || true)
@@ -33,8 +33,11 @@ if [ -z "$url" ]; then
   exit 1
 fi
 
-echo "Starting the memorial (the first time this builds everything and takes several minutes)..."
-PUBLIC_URL="$url" docker compose "${FILES[@]}" up -d --build --wait "${APP[@]}" >/dev/null
+echo "Building the memorial (the first time this takes several minutes)..."
+# Plain progress: the animated display needs a console and fails on some Docker Desktop versions.
+PUBLIC_URL="$url" docker compose --progress plain "${FILES[@]}" build web auth memorial media
+echo "Starting the memorial..."
+PUBLIC_URL="$url" docker compose --progress plain "${FILES[@]}" up -d --no-build --wait "${APP[@]}"
 
 echo
 echo "The memorial is shared at:  $url"
