@@ -30,6 +30,23 @@ In the **Martha Memoir** folder:
 
 To take a backup straight away: `make backup-now`.
 
+## Add photos through pCloud
+
+Anyone with access to the pCloud folder can add photos to the memorial without an account on
+the site:
+
+1. Put photos in **Martha Memoir/Add to Gallery** (the folder is created automatically). A file
+   name like `Mama at church 1985.jpg` becomes the suggested caption.
+2. Within about 15 minutes (`INBOX_INTERVAL_SECONDS` in `.env`) they move out of that folder and
+   wait in the Family area under **Photos to approve**. Nothing appears on the memorial yet.
+3. A family member checks the caption, picks the chapter (it starts on **From the family album**)
+   and clicks **Approve**, or **Don't use**.
+
+Approved photos join the chapter and the Gallery. Every photo, used or not, is kept in the
+`Photos` folder after the next backup. Files that aren't usable photos (documents, iPhone HEIC
+photos, files over 20 MB) are returned to **Add to Gallery/Could not be added**; for iPhone
+photos, send them through WhatsApp first or set the camera to "Most Compatible".
+
 ## Keep the backup passphrase safe
 
 The encrypted backups can only be opened with the passphrase in `secrets/backup_passphrase`.

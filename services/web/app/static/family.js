@@ -1,4 +1,4 @@
-/* Family dashboard: sign in, approve tributes, invite family, account. */
+/* Family dashboard: sign in, approve tributes and shared photos, invite family, account. */
 (function () {
   "use strict";
   const { api, me, h, toast, hasRole, initOverlays, confirmClick } = window.MM;
@@ -26,7 +26,7 @@
     document.querySelectorAll("[data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === name)));
     document.querySelectorAll("[data-panel]").forEach((p) => { p.hidden = p.dataset.panel !== name; });
     history.replaceState(null, "", "#" + name);
-    ({ tributes: loadTributes, people: loadPeople, account: () => {} })[name]();
+    ({ tributes: loadTributes, photos: loadPhotos, people: loadPeople, account: () => {} })[name]();
   }
 
   // ---- Sign in / out ----
@@ -58,6 +58,41 @@
   }
   async function moderate(id, status, card) {
     try { await api("POST", `/api/memorial/tributes/${id}/moderate`, { status }); card.remove(); toast(status === "approved" ? "Tribute published" : "Tribute won't be published"); }
+    catch (e) { toast(e.message); }
+  }
+
+  // ---- Photos shared through pCloud ----
+  async function loadPhotos() {
+    const list = $("photo-list");
+    try {
+      const [rows, story] = await Promise.all([api("GET", "/api/media/review"), api("GET", "/api/memorial/story")]);
+      list.replaceChildren();
+      if (!rows.length) { list.append(h("p", { class: "empty" }, "Nothing waiting. Photos added to the pCloud folder will appear here.")); return; }
+      const album = story.chapters.find((c) => c.slug === "family-album") || story.chapters[story.chapters.length - 1];
+      rows.forEach((p) => {
+        const caption = h("input", { maxlength: "240", value: p.caption, "aria-label": "Caption" });
+        const chapter = h("select", { "aria-label": "Chapter" }, story.chapters.map((c) => h("option", { value: c.id, selected: c.id === album.id }, c.title)));
+        const card = h("article", { class: "tribute review-card" },
+          h("a", { href: p.url, target: "_blank", rel: "noopener" }, h("img", { src: p.thumb_url, alt: p.caption || "Shared photo", loading: "lazy" })),
+          h("div", { class: "field" }, h("label", null, "Caption"), caption),
+          h("div", { class: "field" }, h("label", null, "Chapter"), chapter),
+          h("div", { class: "form-actions" },
+            h("button", { class: "btn small", type: "button", onclick: (ev) => approvePhoto(p, caption.value.trim(), chapter.value, card, ev.target) }, "Approve"),
+            h("button", { class: "btn small ghost", type: "button", onclick: () => rejectPhoto(p, card) }, "Don't use")));
+        list.append(card);
+      });
+    } catch (e) { list.replaceChildren(h("p", { class: "err" }, e.message)); }
+  }
+  async function approvePhoto(p, caption, chapterId, card, btn) {
+    btn.disabled = true;
+    try {
+      await api("POST", "/api/memorial/entries", { chapter_id: chapterId, media_id: p.id, caption, author_name: "The family" });
+      await api("POST", `/api/media/${p.id}/review`, { status: "approved" });
+      card.remove(); toast("Photo added to the memorial"); if (!$("photo-list").children.length) loadPhotos();
+    } catch (e) { toast(e.message); btn.disabled = false; }
+  }
+  async function rejectPhoto(p, card) {
+    try { await api("POST", `/api/media/${p.id}/review`, { status: "rejected" }); card.remove(); toast("Photo won't be used. It stays in the pCloud Photos folder."); if (!$("photo-list").children.length) loadPhotos(); }
     catch (e) { toast(e.message); }
   }
 

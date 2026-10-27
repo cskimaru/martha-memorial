@@ -338,3 +338,8 @@ form.inline{border-radius:12px;border-color:var(--card-line)}
 @media (max-aspect-ratio:4/5){:root[data-theme="dark"] body::after{filter:brightness(.32) saturate(.9);opacity:.9}}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .preview-bar{color:#15131a}}
 :root[data-theme="dark"] .preview-bar{color:#15131a}
+/* Family area: photos shared through pCloud, waiting for approval */
+.review-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:1rem}
+.review-grid>.empty{grid-column:1/-1}
+.review-card{display:flex;flex-direction:column;gap:.6rem}
+.review-card img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;background:var(--line)}

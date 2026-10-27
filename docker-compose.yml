@@ -100,12 +100,13 @@ services:
       S3_BUCKET: ${S3_BUCKET:-memorial-media}
       S3_REGION: ${S3_REGION:-us-east-1}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      INBOX_DIR: /data/inbox   # photos shared through pCloud, imported for review
     secrets:
       - { source: media_database_url, target: database_url }
       - { source: redis_url, target: redis_url }
       - { source: jwt_public_pem, target: jwt_public_key }
       - { source: s3_secret_key, target: s3_secret_key }
-    volumes: [media-data:/data/media]
+    volumes: [media-data:/data/media, photo-inbox:/data/inbox]
     networks: [edge, backend, monitoring]
     depends_on: *db-deps
     deploy: { resources: { limits: { memory: 768M } } }
@@ -177,6 +178,25 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
     logging: { driver: json-file, options: { max-size: "10m", max-file: "3" } }
+
+  # Fetches photos dropped in the pCloud "Add to Gallery" folder for the family to approve.
+  inbox:
+    image: ${REGISTRY:-ghcr.io/owner/martha-memorial}/backup:${IMAGE_TAG:-latest}
+    build: { context: deploy/backup }
+    entrypoint: ["/usr/local/bin/inbox.sh"]
+    user: "10001:10001"
+    restart: unless-stopped
+    environment:
+      OFFSITE_REMOTE: ${OFFSITE_REMOTE:-}
+      INBOX_INTERVAL_SECONDS: ${INBOX_INTERVAL_SECONDS:-900}
+      HOME: /tmp
+    secrets: [rclone_conf]
+    volumes: [photo-inbox:/inbox]
+    networks: [edge]
+    depends_on: [media]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    logging: { driver: json-file, options: { max-size: "5m", max-file: "2" } }
 
   # ---------- Monitoring (reach it through an SSH tunnel; nothing here is public) ----------
   prometheus:
@@ -261,6 +281,7 @@ volumes:
   caddy-config: {}
   postgres-data: {}
   media-data: {}
+  photo-inbox: {}
   prometheus-data: {}
   alertmanager-data: {}
   grafana-data: {}

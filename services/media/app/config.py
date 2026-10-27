@@ -20,6 +20,11 @@ class Settings(CommonSettings):
     thumb_dimension: int = 640
     jpeg_quality: int = 85
 
+    # Photos dropped in the pCloud "Add to Gallery" folder are fetched here (by the inbox service)
+    # and imported for review. Empty turns the import off.
+    inbox_dir: str = ""
+    inbox_poll_seconds: float = 30.0
+
 
 @lru_cache
 def get_settings() -> Settings:

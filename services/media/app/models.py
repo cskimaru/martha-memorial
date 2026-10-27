@@ -20,3 +20,8 @@ class MediaObject(IdMixin, Base):
     original_name: Mapped[str] = mapped_column(String(200), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Photos imported from the pCloud "Add to Gallery" folder wait for a family member:
+    # "pending", then "approved" or "rejected". Empty for photos uploaded on the site.
+    review_status: Mapped[str] = mapped_column(String(16), default="", server_default="", index=True)
+    reviewed_by: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 FILES=(-f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.tunnel.yml)
-APP=(caddy web auth memorial media postgres redis backup)
+APP=(caddy web auth memorial media postgres redis backup inbox)
 compose() { docker compose --progress plain "${FILES[@]}" "$@"; }
 
 if [ "${1:-}" = "stop" ]; then

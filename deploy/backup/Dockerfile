@@ -9,6 +9,8 @@ RUN --mount=type=secret,id=build_ca,required=false \
     fi; \
     apt-get update && apt-get install -y --no-install-recommends ca-certificates gnupg rclone \
  && apt-get upgrade -y && rm -rf /var/lib/apt/lists/* /etc/apt/apt.conf.d/99build-ca /tmp/build_ca.crt
-COPY backup.sh restore.sh loop.sh /usr/local/bin/
-RUN chmod 0555 /usr/local/bin/backup.sh /usr/local/bin/restore.sh /usr/local/bin/loop.sh
+COPY backup.sh restore.sh loop.sh inbox.sh /usr/local/bin/
+RUN chmod 0555 /usr/local/bin/backup.sh /usr/local/bin/restore.sh /usr/local/bin/loop.sh /usr/local/bin/inbox.sh \
+ # the shared-photo inbox is written here by inbox.sh and read by the media service, both as uid 10001
+ && mkdir -p /inbox && chown 10001:10001 /inbox
 ENTRYPOINT ["/usr/local/bin/loop.sh"]

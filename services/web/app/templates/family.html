@@ -23,6 +23,7 @@
       <button class="btn small ghost" id="logout" type="button">Sign out</button></div>
     <div class="tabs" role="tablist">
       <button role="tab" data-tab="tributes" aria-selected="true">Tributes to approve</button>
+      <button role="tab" data-tab="photos">Photos to approve</button>
       <button role="tab" data-tab="people" data-role="owner" hidden>Family members</button>
       <button role="tab" data-tab="account">My account</button>
     </div>
@@ -30,6 +31,11 @@
     <section data-panel="tributes" class="stack">
       <p class="hint">Tributes from visitors appear on the memorial only after a family member approves them.</p>
       <div id="pending-list" class="stack"></div>
+    </section>
+
+    <section data-panel="photos" class="stack" hidden>
+      <p class="hint">Photos dropped in the <strong>Add to Gallery</strong> folder of the family's pCloud (Martha Memoir) arrive here within about 15 minutes. They appear on the memorial only after you approve them.</p>
+      <div id="photo-list" class="review-grid"></div>
     </section>
 
     <section data-panel="people" class="stack" hidden>

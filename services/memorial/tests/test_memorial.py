@@ -11,8 +11,8 @@ async def test_story_is_seeded_with_martha_and_chapters(client):
     data = r.json()
     assert data["profile"]["full_name"] == "Martha Kemunto Ongosi"
     titles = [c["title"] for c in data["chapters"]]
-    assert titles[0] == "Roots" and titles[-1] == "The Farewell"
-    assert len(titles) == 9
+    assert titles[0] == "Roots" and titles[-2:] == ["The Farewell", "From the family album"]
+    assert len(titles) == 10
 
 
 async def test_visitors_cannot_write(client):
