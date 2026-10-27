@@ -1,4 +1,4 @@
-# Martha Kemunto Ongosi — Memorial
+# Martha Kemunto Ongosi — Memoir
 
 A memorial website for Martha Kemunto Ongosi, mother of Anita. Her life is told in chapters that invited
 family members fill with stories and photographs. Visitors can leave tributes (approved by the family)
