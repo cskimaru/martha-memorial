@@ -4,7 +4,7 @@
 # secrets/rclone.conf on this computer. See docs/backups-to-pcloud.md.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-FOLDER="${1:-Martha Memorial}"
+FOLDER="${1:-Martha Memoir}"
 CONF=secrets/rclone.conf
 
 [ -f .env ] || { cp .env.example .env; sed -i.bak 's/^SITE_DOMAIN=.*/SITE_DOMAIN=localhost/' .env && rm -f .env.bak; }
@@ -20,7 +20,8 @@ echo "Open it in your browser (copy and paste it into Chrome or Edge on this com
 echo "sign in with the pCloud account to use, and click Allow. Then come back here."
 echo
 rclone config delete pcloud --config "$CONF" >/dev/null 2>&1 || true
-rclone config create pcloud pcloud --config "$CONF"
+# rclone prints the new config, access key included, on stdout: keep it off the screen.
+rclone config create pcloud pcloud --config "$CONF" >/dev/null
 
 if ! grep -q '^token' "$CONF"; then
   echo "pCloud wasn't connected (no sign-in was completed). Run 'make connect-pcloud' to try again." >&2

@@ -21,7 +21,7 @@ never stored, and nothing about pCloud is visible on the website.
 
 ## What appears in pCloud
 
-In the **Martha Memorial** folder:
+In the **Martha Memoir** folder:
 
 | Folder | What it holds |
 |---|---|
