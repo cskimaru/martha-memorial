@@ -184,3 +184,35 @@ async def test_health_and_metrics(client):
     ready = await client.get("/readyz")
     assert ready.status_code == 200 and ready.json()["checks"]["database"] is True
     assert "http_requests_total" in (await client.get("/metrics")).text
+
+
+async def test_extra_origins_are_accepted(owner):
+    """While shared through a tunnel the site is also opened at http://localhost:8080; edits from there work."""
+    from app.main import app
+    from memorial_common.middleware import OriginCheckMiddleware
+
+    mw = next(m for m in app.user_middleware if m.cls is OriginCheckMiddleware)
+    original = mw.kwargs["allowed_origins"]
+    mw.kwargs["allowed_origins"] = frozenset({"http://testserver", "http://localhost:8080"})
+    app.middleware_stack = None  # rebuild with the new setting
+    try:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://testserver", headers={"origin": "http://localhost:8080"}
+        ) as c:
+            await c.post("/api/auth/login", json={"email": owner["email"], "password": owner["password"]})
+            ok = await c.post("/api/auth/invitations", json={"email": f"x-{uuid.uuid4().hex[:6]}@example.com"})
+            assert ok.status_code == 201
+            bad = await c.post(
+                "/api/auth/invitations", json={"email": "y@example.com"}, headers={"origin": "https://evil.example"}
+            )
+            assert bad.status_code == 403
+    finally:
+        mw.kwargs["allowed_origins"] = original
+        app.middleware_stack = None
+
+
+def test_allowed_origins_setting():
+    from memorial_common.config import CommonSettings
+
+    s = CommonSettings(site_origin="https://abc.trycloudflare.com/", extra_origins="http://localhost:8080, ")
+    assert s.allowed_origins == {"https://abc.trycloudflare.com", "http://localhost:8080"}

@@ -60,7 +60,7 @@ def create_app(
     app.state.limiter = RateLimiter(redis, settings.service_name)
     app.state.verifier = TokenVerifier(settings.public_key_pem(), settings.jwt_issuer, settings.jwt_audience)
 
-    app.add_middleware(OriginCheckMiddleware, site_origin=settings.site_origin)
+    app.add_middleware(OriginCheckMiddleware, allowed_origins=settings.allowed_origins)
     app.add_middleware(RequestContextMiddleware)
 
     Instrumentator(excluded_handlers=["/healthz", "/readyz", "/metrics"]).instrument(app).expose(

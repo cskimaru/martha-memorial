@@ -49,14 +49,14 @@ class OriginCheckMiddleware(BaseHTTPMiddleware):
     are not affected.
     """
 
-    def __init__(self, app, site_origin: str) -> None:
+    def __init__(self, app, allowed_origins: frozenset[str]) -> None:
         super().__init__(app)
-        self.site_origin = site_origin
+        self.allowed_origins = allowed_origins
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         has_session = ACCESS_COOKIE in request.cookies or REFRESH_COOKIE in request.cookies
         if request.method in UNSAFE and has_session:
             origin = request.headers.get("origin") or ""
-            if origin.rstrip("/") != self.site_origin:
+            if origin.rstrip("/") not in self.allowed_origins:
                 return JSONResponse({"detail": "Cross-site request blocked."}, status_code=403)
         return await call_next(request)

@@ -31,6 +31,9 @@ class CommonSettings(BaseSettings):
     # Public origin of the site, e.g. https://martha.example.com. Used for the
     # cross-site request check on cookie-authenticated writes.
     site_origin: str = "http://localhost:8080"
+    # Other addresses the site is also opened at, comma-separated (e.g. http://localhost:8080 while
+    # it is shared through a tunnel). Signed-in changes are accepted from these too.
+    extra_origins: str = ""
 
     jwt_public_key: str | None = None
     jwt_public_key_file: str | None = None
@@ -44,6 +47,11 @@ class CommonSettings(BaseSettings):
     @classmethod
     def _strip_slash(cls, v: str) -> str:
         return v.rstrip("/")
+
+    @property
+    def allowed_origins(self) -> frozenset[str]:
+        extra = {o.strip().rstrip("/") for o in self.extra_origins.split(",") if o.strip()}
+        return frozenset({self.site_origin} | extra)
 
     @property
     def is_production(self) -> bool:
