@@ -1,4 +1,4 @@
-FROM postgres:16.6-bookworm
+FROM postgres:18.6-bookworm
 # Packages are verified by Debian's signatures. Behind a TLS-inspecting proxy, pass its CA as the
 # build secret "build_ca" and apt switches to HTTPS through it.
 RUN --mount=type=secret,id=build_ca,required=false \
