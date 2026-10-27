@@ -39,6 +39,29 @@ if [ -n "${OFFSITE_S3_ENDPOINT:-}" ] && [ -n "${OFFSITE_S3_BUCKET:-}" ] && [ -s 
   rclone copy --no-traverse "$OUT.sha256" "offsite:$OFFSITE_S3_BUCKET/archive/"
 fi
 
+# Any rclone remote, for example a family member's pCloud (see docs/backups-to-pcloud.md).
+if [ -n "${OFFSITE_REMOTE:-}" ] && [ -s /run/secrets/rclone_conf ]; then
+  # rclone may refresh the access token, so give it a writable copy of the config.
+  cp /run/secrets/rclone_conf /tmp/rclone.conf
+  export RCLONE_CONFIG=/tmp/rclone.conf
+  echo "[$STAMP] Copying to $OFFSITE_REMOTE"
+  rclone copy --no-traverse "$OUT" "$OFFSITE_REMOTE/Backups (encrypted)/"
+  rclone copy --no-traverse "$OUT.sha256" "$OFFSITE_REMOTE/Backups (encrypted)/"
+  rclone delete --min-age "${OFFSITE_KEEP_DAYS:-90}d" "$OFFSITE_REMOTE/Backups (encrypted)/"
+
+  # A plain copy of every photograph the family can open directly. Add-only: a photo removed
+  # from the memorial stays here.
+  STAGE=/backups/work/photos-$STAMP
+  mkdir -p "$STAGE"
+  for f in /media/photos/*/full.jpg; do
+    [ -f "$f" ] || continue
+    id=$(basename "$(dirname "$f")")
+    ln -s "$f" "$STAGE/$(date -u -r "$f" +%Y-%m-%d)_$(echo "$id" | cut -c1-12).jpg"
+  done
+  rclone copy --copy-links --ignore-existing "$STAGE" "$OFFSITE_REMOTE/Photos/"
+  rm -rf "$STAGE"
+fi
+
 find "$ARCHIVE_DIR" -name '*.gpg*' -mtime +"$KEEP_DAYS" -delete
 
 SIZE=$(stat -c %s "$OUT")

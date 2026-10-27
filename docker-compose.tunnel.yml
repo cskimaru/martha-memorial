@@ -32,3 +32,6 @@ services:
     environment: *public
   media:
     environment: *public
+  backup:
+    environment:
+      BACKUP_ON_START: "true"

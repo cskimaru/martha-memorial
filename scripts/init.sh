@@ -25,7 +25,7 @@ for n in ip_hash_salt redis_password pg_superuser_password pg_auth_password \
   gen "$n"
 done
 gen backup_passphrase 48
-for n in s3_secret_key offsite_s3_access_key offsite_s3_secret_key smtp_password; do
+for n in s3_secret_key offsite_s3_access_key offsite_s3_secret_key smtp_password rclone.conf; do
   placeholder "$n"
 done
 if [ ! -s secrets/jwt_private.pem ]; then

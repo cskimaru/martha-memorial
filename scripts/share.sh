@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 FILES=(-f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.tunnel.yml)
-APP=(caddy web auth memorial media postgres redis)
+APP=(caddy web auth memorial media postgres redis backup)
 compose() { docker compose --progress plain "${FILES[@]}" "$@"; }
 
 if [ "${1:-}" = "stop" ]; then
@@ -58,7 +58,7 @@ fi
 
 echo "Building the memorial (the first time this takes several minutes)..."
 # Plain progress: the animated display needs a console and fails on some Docker Desktop versions.
-PUBLIC_URL="$url" compose build web auth memorial media
+PUBLIC_URL="$url" compose build web auth memorial media backup
 echo "Starting the memorial..."
 PUBLIC_URL="$url" compose up -d --no-build --wait "${APP[@]}"
 

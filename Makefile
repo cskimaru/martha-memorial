@@ -4,7 +4,7 @@ DEV := $(COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml
 SERVICES := auth memorial media web
 PY ?= python3
 
-.PHONY: help share share-new share-stop init up down down-apps dev dev-down logs ps migrate create-owner backup-now restore smoke test lint fmt build pull deploy
+.PHONY: help share share-new share-stop connect-pcloud restore-here init up down down-apps dev dev-down logs ps migrate create-owner backup-now restore smoke test lint fmt build pull deploy
 
 help:          ## Show this help
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -17,6 +17,14 @@ share-new:     ## Same, but with a fresh quick link
 
 share-stop:    ## Stop the shared copy (data is kept)
 	./scripts/share.sh stop
+
+connect-pcloud: ## Send backups and a copy of every photo to a pCloud account
+	./scripts/connect-pcloud.sh
+
+restore-here:  ## Restore on this computer: make restore-here file=backups/archive/<stamp>.tar.gz.gpg
+	./scripts/share.sh stop
+	$(DEV) run --rm --entrypoint restore.sh backup /backups/archive/$(notdir $(file)) --yes
+	./scripts/share.sh
 
 init:          ## Create .env, secrets and generated config (safe to re-run)
 	./scripts/init.sh

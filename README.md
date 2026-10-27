@@ -37,6 +37,8 @@ Sign in at http://localhost:8080/family, invite family members, and start fillin
 
 * [docs/share-from-your-computer.md](docs/share-from-your-computer.md): run it on your own computer and
   share a free Cloudflare link with `make share`. No server and no card.
+* [docs/backups-to-pcloud.md](docs/backups-to-pcloud.md): copy daily backups and every photo to a pCloud
+  account with `make connect-pcloud`.
 * [docs/free-hosting-oracle.md](docs/free-hosting-oracle.md): Oracle Cloud's free server with a free DuckDNS
   address (needs a card for verification).
 
