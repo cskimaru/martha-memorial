@@ -71,12 +71,13 @@ templates.env.filters["initials"] = initials
 templates.env.globals["asset_version"] = settings.asset_version
 templates.env.globals["site_origin"] = settings.site_origin
 templates.env.globals["site_preview"] = settings.site_preview
+# (key, name shown to people). Keys are kept from the first version so saved choices keep working.
 templates.env.globals["palettes"] = [
-    ("plum", "Plum"),
-    ("forest", "Forest"),
-    ("navy", "Navy"),
-    ("burgundy", "Burgundy"),
-    ("charcoal", "Charcoal"),
+    ("plum", "Lavender evening"),
+    ("charcoal", "Morning light"),
+    ("forest", "Garden"),
+    ("navy", "Still waters"),
+    ("burgundy", "Rose dusk"),
 ]
 
 NO_STORE = {"Cache-Control": "no-store"}
