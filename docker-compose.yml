@@ -200,7 +200,7 @@ services:
 
   # ---------- Monitoring (reach it through an SSH tunnel; nothing here is public) ----------
   prometheus:
-    image: prom/prometheus:v2.55.1
+    image: prom/prometheus:v3.15.1
     restart: unless-stopped
     command:
       - --config.file=/etc/prometheus/prometheus.yml
