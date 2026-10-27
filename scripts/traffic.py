@@ -8,14 +8,19 @@ requests, data sent and time spent answering.
 
 import collections
 import json
+import re
+import shutil
 import subprocess
 import sys
 
 since = sys.argv[1] if len(sys.argv) > 1 else "1h"
+if not re.fullmatch(r"\d+[smhd]", since):
+    sys.exit("Give the time window like 10m, 1h, 24h or 7d.")
 if since.endswith("d"):
     since = f"{int(since[:-1]) * 24}h"
-log = subprocess.run(
-    ["docker", "logs", "--since", since, "martha-memorial-caddy-1"], capture_output=True, text=True, check=True
+docker = shutil.which("docker") or sys.exit("Docker isn't installed or isn't running.")
+log = subprocess.run(  # noqa: S603 - fixed command; the only input is the checked time window
+    [docker, "logs", "--since", since, "martha-memorial-caddy-1"], capture_output=True, text=True, check=True
 )
 
 
