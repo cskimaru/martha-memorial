@@ -48,9 +48,13 @@
   </div>
 </header>
 
-<nav class="toc" aria-label="Chapters"><div class="wrap wide">
-  {% for c in chapters %}<a href="#ch-{{ c.slug }}">{{ c.title }}</a>{% endfor %}
-  <a href="#gallery-sec">Gallery</a><a href="#tributes">Tributes</a><a href="#candles">Candles</a>
+<nav class="toc" aria-label="Chapters"><div class="wrap wide toc-inner">
+  <button class="toc-more prev" type="button" aria-label="Show earlier chapters" tabindex="-1" hidden>‹</button>
+  <div class="toc-links" id="toc-links">
+    {% for c in chapters %}<a href="#ch-{{ c.slug }}">{{ c.title }}</a>{% endfor %}
+    <a href="#gallery-sec">Gallery</a><a href="#tributes">Tributes</a><a href="#candles">Candles</a>
+  </div>
+  <button class="toc-more next" type="button" aria-label="Show more chapters" tabindex="-1" hidden>›</button>
 </div></nav>
 
 {% if degraded %}

@@ -343,3 +343,28 @@ form.inline{border-radius:12px;border-color:var(--card-line)}
 .review-grid>.empty{grid-column:1/-1}
 .review-card{display:flex;flex-direction:column;gap:.6rem}
 .review-card img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;background:var(--line)}
+
+/* Heading above her name on a soft grey band */
+.hero .label{display:inline-block;background:rgba(120,118,124,.26);color:var(--ink);padding:.05em .3em .12em;line-height:1.35}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hero .label{background:rgba(255,255,255,.16)}}
+:root[data-theme="dark"] .hero .label{background:rgba(255,255,255,.16)}
+
+/* Chapter menu: every link shows on larger screens (wrapping if needed); on phones it scrolls
+   sideways, with a fade and an arrow on the side where more links are hidden. */
+nav.toc .wrap.toc-inner{display:block;position:relative;overflow:visible;padding-block:0;white-space:normal}
+.toc-links{display:flex;flex-wrap:wrap;justify-content:center;gap:.35rem 1.3rem;padding-block:.7rem}
+.toc-links a{white-space:nowrap}
+.toc-more{display:none}
+@media (max-width:720px){
+  .toc-links{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth}
+  .toc-links::-webkit-scrollbar{display:none}
+  nav.toc.more-right .toc-links{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 3.5rem),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 3.5rem),transparent)}
+  nav.toc.more-left .toc-links{-webkit-mask-image:linear-gradient(to left,#000 calc(100% - 3.5rem),transparent);mask-image:linear-gradient(to left,#000 calc(100% - 3.5rem),transparent)}
+  nav.toc.more-left.more-right .toc-links{-webkit-mask-image:linear-gradient(to right,transparent,#000 3.5rem,#000 calc(100% - 3.5rem),transparent);mask-image:linear-gradient(to right,transparent,#000 3.5rem,#000 calc(100% - 3.5rem),transparent)}
+  .toc-more:not([hidden]){display:grid;place-items:center;position:absolute;top:50%;transform:translateY(-50%);z-index:1;
+    width:2rem;height:2rem;border-radius:50%;border:1px solid var(--card-line);background:var(--card);color:var(--plum);
+    font-size:1.3rem;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(60,50,70,.15);padding:0 0 .15rem}
+  .toc-more.prev{left:.25rem}
+  .toc-more.next{right:.25rem}
+}
+nav.toc{background:var(--paper)}  /* solid, so page text doesn't show through when it sticks to the top */

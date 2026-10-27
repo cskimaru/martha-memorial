@@ -5,6 +5,23 @@
   const $ = (id) => document.getElementById(id);
   initOverlays();
 
+  // ---- Chapter menu: on phones, show arrows where more links are hidden ----
+  (function () {
+    const links = $("toc-links");
+    if (!links) return;
+    const nav = links.closest("nav"), prev = nav.querySelector(".prev"), next = nav.querySelector(".next");
+    function update() {
+      const left = links.scrollLeft > 4, right = links.scrollLeft + links.clientWidth < links.scrollWidth - 4;
+      nav.classList.toggle("more-left", left); nav.classList.toggle("more-right", right);
+      prev.hidden = !left; next.hidden = !right;
+    }
+    prev.addEventListener("click", () => links.scrollBy({ left: -links.clientWidth * 0.7 }));
+    next.addEventListener("click", () => links.scrollBy({ left: links.clientWidth * 0.7 }));
+    links.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    update();
+  })();
+
   // ---- Lightbox ----
   document.addEventListener("click", (ev) => {
     const t = ev.target.closest("[data-full]");
