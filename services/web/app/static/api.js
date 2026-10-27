@@ -6,6 +6,11 @@
     constructor(status, message, errors) { super(message); this.status = status; this.errors = errors || []; }
   }
 
+  // Requests that must not trigger a session refresh: signing in, the refresh itself, and
+  // the invitation pages used before an account exists. Everything else (including family
+  // account management under /api/auth/) refreshes an expired session and retries once.
+  const NO_REFRESH = ["/api/auth/login", "/api/auth/refresh", "/api/auth/logout", "/api/auth/invitations/lookup", "/api/auth/invitations/accept"];
+
   let refreshing = null;
   async function refresh() {
     if (!refreshing) {
@@ -23,7 +28,7 @@
     let r;
     try { r = await fetch(url, init); }
     catch (e) { throw new ApiError(0, "You seem to be offline. Check your connection and try again."); }
-    if (r.status === 401 && !opts.noRefresh && !url.startsWith("/api/auth/")) {
+    if (r.status === 401 && !opts.noRefresh && !NO_REFRESH.some((p) => url.startsWith(p))) {
       if (await refresh()) return api(method, url, body, Object.assign({}, opts, { noRefresh: true }));
     }
     if (r.status === 204) return null;
