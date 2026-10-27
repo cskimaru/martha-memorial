@@ -148,6 +148,25 @@ async def test_family_heading_and_website_title(client):
     assert '<span class="label">Forever in our hearts</span>' in html
 
 
+@respx.mock
+async def test_gallery_shows_portrait_and_chapter_photos(client):
+    from app.main import app
+
+    app.state.content._cache = None
+    entry = {**STORY["chapters"][0]["entries"][0], "id": "e2", "media_id": "m-chapter", "caption": "Mama at home"}
+    chapters = [{**STORY["chapters"][0], "entries": [entry]}, STORY["chapters"][1]]
+    story = {**STORY, "profile": {**STORY["profile"], "portrait_media_id": "m-portrait"}, "chapters": chapters}
+    respx.get("http://memorial.internal/api/memorial/story").mock(return_value=httpx.Response(200, json=story))
+    respx.get("http://memorial.internal/api/memorial/tributes").mock(return_value=httpx.Response(200, json=[]))
+    respx.get("http://memorial.internal/api/memorial/candles").mock(
+        return_value=httpx.Response(200, json={"count": 0, "candles": []})
+    )
+    html = (await client.get("/")).text
+    gallery = html.split("<h2>Gallery</h2>", 1)[1].split("</section>", 1)[0]
+    assert gallery.index('data-full="/api/media/m-portrait"') < gallery.index('data-full="/api/media/m-chapter"')
+    assert "Photographs added to any chapter appear here." not in gallery
+
+
 async def test_static_urls_change_when_files_change(tmp_path):
     from app.main import static_fingerprint
 

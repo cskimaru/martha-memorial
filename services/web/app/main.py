@@ -106,6 +106,9 @@ async def home(request: Request) -> HTMLResponse:
     story = data.story or {"profile": None, "chapters": []}
     profile = story.get("profile") or {"full_name": "Martha Kemunto Ongosi", "known_as": "Mother of Anita"}
     photos = [e for c in story["chapters"] for e in c["entries"] if e.get("media_id")]
+    # Her portrait leads the gallery too: families expect every photo they add to appear there.
+    if profile.get("portrait_media_id"):
+        photos.insert(0, {"media_id": profile["portrait_media_id"], "caption": profile.get("full_name"), "title": ""})
     signed_in = auth_headers(request) is not None
     resp = templates.TemplateResponse(
         request,
