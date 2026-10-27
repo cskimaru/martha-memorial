@@ -4,7 +4,7 @@ DEV := $(COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml
 SERVICES := auth memorial media web
 PY ?= python3
 
-.PHONY: help share share-new share-stop connect-pcloud restore-here init up down down-apps dev dev-down logs ps migrate create-owner backup-now restore smoke test lint fmt build pull deploy
+.PHONY: help share share-new share-stop connect-pcloud restore-here traffic init up down down-apps dev dev-down logs ps migrate create-owner backup-now restore smoke test lint fmt build pull deploy
 
 help:          ## Show this help
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -25,6 +25,9 @@ restore-here:  ## Restore on this computer: make restore-here file=backups/archi
 	./scripts/share.sh stop
 	$(DEV) run --rm --entrypoint restore.sh backup /backups/archive/$(notdir $(file)) --yes
 	./scripts/share.sh
+
+traffic:       ## Which part of the site is busiest: make traffic since=24h
+	$(PY) scripts/traffic.py $(or $(since),1h)
 
 init:          ## Create .env, secrets and generated config (safe to re-run)
 	./scripts/init.sh

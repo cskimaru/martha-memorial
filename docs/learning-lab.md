@@ -152,6 +152,81 @@ object storage (`STORAGE_BACKEND=s3`).
 few seconds two copies can show slightly different versions. Shared state (rate limits) lives in
 Redis, so it holds across copies.
 
+## Lab 8: Each service has its own database login
+
+Three services store data, each in its own database with its own login: `auth`, `memorial`,
+`media`. `web` has none; it only asks `memorial` through its API.
+
+```
+docker exec martha-memorial-postgres-1 psql -U postgres -c "\l"
+docker exec martha-memorial-postgres-1 psql -U postgres -c "\du"
+```
+
+Now try to use `memorial`'s login on another service's database:
+
+```
+docker exec martha-memorial-postgres-1 psql -U memorial -d memorial -c "\dt"
+docker exec martha-memorial-postgres-1 psql -U memorial -d auth -c "\dt"
+```
+
+Result: the first lists memorial's 7 tables; the second is refused with
+`permission denied for database "auth"` and `User does not have CONNECT privilege`.
+The same happened with memorial's real password from inside its container. So a bug or break-in
+in `memorial` cannot read accounts and passwords in `auth`. This is set up once, in
+`deploy/postgres/init-databases.sh`.
+
+Also notice: `docker exec martha-memorial-web-1 ls /run/secrets` fails, because `web` was given no
+secrets at all, and the containers' own files are read-only
+(`docker inspect -f '{{.HostConfig.ReadonlyRootfs}}' martha-memorial-memorial-1` prints `true`).
+
+## Lab 9: Which part is busiest
+
+```
+make traffic              # last hour
+make traffic since=24h
+```
+
+It totals the gateway's log per service. With 6 photos on the page and 10 simulated visitors
+(each scrolling the page, opening a photo, some leaving a tribute or candle):
+
+| Service | Requests | Data sent | Time spent |
+|---|---|---|---|
+| media (photos) | 144 | 441 KB | 5.6 s |
+| auth (sign-in check) | 61 | 1 KB | 1.7 s |
+| web (design files) | 48 | 349 KB | 0.7 s |
+| web (pages) | 24 | 65 KB | 1.4 s |
+| memorial (tributes, candles) | 20 | 4 KB | 0.3 s |
+
+**`media` is the busiest**: every visitor loads every photo on the page, and photos are the
+heaviest files. It is the first candidate for more copies, or for a CDN (Cloudflare caching) in
+front of it. The photos are served with a one-year cache, so returning visitors don't download
+them again.
+
+`memorial` looks quiet from outside, but `web` calls it three times for every page it builds.
+Those internal calls don't pass the gateway; count them with
+`docker logs --since 1h martha-memorial-memorial-1 | grep -c '"logger": "access"'`. `web` keeps the
+page for 15 seconds, so a crowd of visitors costs `memorial` very little.
+
+Measuring also found waste: each visitor's page asked `auth` "who is signed in?" and then tried
+to renew a session twice. Now it is once.
+
+## Watching it in Docker Desktop
+
+Docker Desktop shows the same things live, with no commands:
+
+* **Containers**: open the `martha-memorial` group. Each service is a row, with status, CPU and
+  memory. With `make share SCALE="web=3"` you see `web-1`, `web-2`, `web-3` appear.
+* Click a container, then:
+  * **Logs**: its requests as they happen. Paste a request ID in the search box (Lab 6).
+  * **Inspect**: networks, volumes, the read-only setting, memory limit.
+  * **Exec**: a terminal inside it. In `postgres`, try the Lab 8 commands
+    (`psql -U memorial -d auth`).
+  * **Stats**: live CPU, memory, network and disk graphs. Leave it open on `media` while
+    scrolling the gallery to watch it work.
+* **Volumes**: `postgres-data`, `media-data` (the photos), `photo-inbox`: where data survives
+  container restarts.
+* Stop a container with its stop button and watch the site keep working (Lab 3), then start it.
+
 ## What the design makes easy, and what it makes hard
 
 | Easy | Hard |

@@ -42,12 +42,9 @@
     return data;
   }
 
+  // Who is signed in, or null. api() already renews an expired session once and retries.
   async function me() {
-    try { return await api("GET", "/api/auth/me"); }
-    catch (e) {
-      if (e.status === 401 && (await refresh())) { try { return await api("GET", "/api/auth/me"); } catch (_) { return null; } }
-      return null;
-    }
+    try { return await api("GET", "/api/auth/me"); } catch (e) { return null; }
   }
 
   function h(tag, attrs) {
