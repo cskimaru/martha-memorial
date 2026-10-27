@@ -171,10 +171,11 @@
     });
 
     // Profile form
-    const PF = ["full_name", "known_as", "born", "died", "birthplace", "resting_place", "epitaph", "service_date", "service_venue", "stream_url", "theme"];
+    const PF = ["full_name", "known_as", "born", "died", "birthplace", "resting_place", "epitaph", "service_date", "service_venue", "stream_url", "theme", "heading", "site_title"];
     function openProfile() {
       const p = story.profile || {};
-      PF.forEach((k) => { $("p-" + k).value = p[k] || (k === "theme" ? "plum" : ""); });
+      const defaults = { theme: "plum", heading: "In loving memory" };
+      PF.forEach((k) => { $("p-" + k).value = p[k] || defaults[k] || ""; });
       $("p-portrait").value = ""; $("p-err").textContent = ""; $("profile-ov").hidden = false;
     }
     $("profile-form").addEventListener("submit", async (ev) => {

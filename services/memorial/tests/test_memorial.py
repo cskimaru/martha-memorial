@@ -155,3 +155,16 @@ async def test_rate_limit_follows_visitor_address_from_gateway(client):
     assert blocked.status_code == 429
     other = await client.post("/api/memorial/candles", json={"name": "B"}, headers={"x-real-ip": "198.51.100.2"})
     assert other.status_code == 201
+
+
+async def test_family_words_the_heading_and_title(client):
+    story = (await client.get("/api/memorial/story")).json()
+    assert story["profile"]["heading"] == "In loving memory"
+    assert story["profile"]["site_title"] == ""
+    r = await client.put(
+        "/api/memorial/profile",
+        json={"full_name": "Martha Kemunto Ongosi", "heading": "Forever in our hearts", "site_title": "Mama Martha"},
+        headers=EDITOR,
+    )
+    assert r.status_code == 200
+    assert r.json()["heading"] == "Forever in our hearts" and r.json()["site_title"] == "Mama Martha"

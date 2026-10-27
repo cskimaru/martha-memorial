@@ -120,6 +120,7 @@ async def test_family_colour_choice_and_preview_bar(client):
     )
     html = (await client.get("/")).text
     assert 'data-palette="forest"' in html
+    assert "<title>Martha Kemunto Ongosi</title>" in html and "In loving memory" in html
     assert "Private preview" not in html
     templates.env.globals["site_preview"] = True
     try:
@@ -128,3 +129,20 @@ async def test_family_colour_choice_and_preview_bar(client):
         assert "Private preview" in html and 'data-palette-choice="navy"' in html
     finally:
         templates.env.globals["site_preview"] = False
+
+
+@respx.mock
+async def test_family_heading_and_website_title(client):
+    from app.main import app
+
+    app.state.content._cache = None
+    story = {**STORY, "profile": {**STORY["profile"], "heading": "Forever in our hearts", "site_title": "Mama Martha"}}
+    respx.get("http://memorial.internal/api/memorial/story").mock(return_value=httpx.Response(200, json=story))
+    respx.get("http://memorial.internal/api/memorial/tributes").mock(return_value=httpx.Response(200, json=[]))
+    respx.get("http://memorial.internal/api/memorial/candles").mock(
+        return_value=httpx.Response(200, json={"count": 0, "candles": []})
+    )
+    html = (await client.get("/")).text
+    assert "<title>Mama Martha</title>" in html
+    assert '<meta property="og:title" content="Mama Martha">' in html
+    assert '<span class="label">Forever in our hearts</span>' in html

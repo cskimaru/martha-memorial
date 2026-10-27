@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% set name = profile.full_name %}
-{% block title %}{{ name }}{% endblock %}
+{% set page_title = profile.site_title or name %}
+{% block title %}{{ page_title }}{% endblock %}
 {% block meta %}
-<meta name="description" content="In loving memory of {{ name }}. {{ profile.known_as }}">
+<meta name="description" content="{{ profile.heading or "In loving memory" }}: {{ name }}. {{ profile.known_as }}">
 <meta property="og:type" content="website">
-<meta property="og:title" content="In loving memory of {{ name }}">
+<meta property="og:title" content="{{ page_title }}">
 <meta property="og:description" content="{{ profile.epitaph or profile.known_as }}">
 <meta property="og:url" content="{{ site_origin }}/">
 {% if profile.portrait_media_id %}<meta property="og:image" content="{{ site_origin }}/api/media/{{ profile.portrait_media_id }}">{% endif %}
@@ -21,7 +22,7 @@
 <header class="hero">
   <div class="wrap">
     <div class="topbar"><a href="/family" id="family-link">Family sign in</a></div>
-    <span class="label">In loving memory</span>
+    <span class="label">{{ profile.heading or "In loving memory" }}</span>
     <div class="portrait">
       {% if profile.portrait_media_id %}
         <img src="/api/media/{{ profile.portrait_media_id }}/thumb" alt="Portrait of {{ name }}">

@@ -42,6 +42,8 @@ class ProfileIn(BaseModel):
     service_venue: Text(200) = ""
     stream_url: HttpsUrl = ""
     theme: Theme = "plum"
+    heading: Text(120) = "In loving memory"
+    site_title: Text(160) = ""
 
 
 class ProfileOut(ProfileIn):
