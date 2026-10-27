@@ -10,6 +10,9 @@ if [ ! -f .env ]; then
 fi
 set -a
 # shellcheck disable=SC1091
+# Values with spaces (such as a pCloud folder name) must be quoted for the shell to read .env;
+# quote OFFSITE_REMOTE if an earlier version wrote it without quotes.
+sed -i.bak -E 's/^OFFSITE_REMOTE=(pcloud:[^"#]*[^"#[:space:]])[[:space:]]*$/OFFSITE_REMOTE="\1"/' .env && rm -f .env.bak
 . ./.env
 set +a
 

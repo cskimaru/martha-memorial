@@ -30,9 +30,9 @@ fi
 rclone mkdir "pcloud:$FOLDER" --config "$CONF"
 
 if grep -qE '^OFFSITE_REMOTE=' .env; then
-  sed -i.bak "s|^OFFSITE_REMOTE=.*|OFFSITE_REMOTE=pcloud:$FOLDER|" .env && rm -f .env.bak
+  sed -i.bak "s|^OFFSITE_REMOTE=.*|OFFSITE_REMOTE=\"pcloud:$FOLDER\"|" .env && rm -f .env.bak
 else
-  echo "OFFSITE_REMOTE=pcloud:$FOLDER" >> .env
+  echo "OFFSITE_REMOTE=\"pcloud:$FOLDER\"" >> .env
 fi
 
 echo
