@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime
 from pathlib import Path
 
@@ -68,7 +69,18 @@ def initials(name: str) -> str:
 templates.env.filters["roman"] = roman
 templates.env.filters["nice_date"] = nice_date
 templates.env.filters["initials"] = initials
-templates.env.globals["asset_version"] = settings.asset_version
+
+
+def static_fingerprint(root: Path) -> str:
+    digest = hashlib.sha256()
+    for f in sorted(root.rglob("*")):
+        if f.is_file():
+            digest.update(f.relative_to(root).as_posix().encode())
+            digest.update(f.read_bytes())
+    return digest.hexdigest()[:12]
+
+
+templates.env.globals["asset_version"] = settings.asset_version or static_fingerprint(HERE / "static")
 templates.env.globals["site_origin"] = settings.site_origin
 templates.env.globals["site_preview"] = settings.site_preview
 # (key, name shown to people). Keys are kept from the first version so saved choices keep working.

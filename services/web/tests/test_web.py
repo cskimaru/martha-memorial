@@ -146,3 +146,20 @@ async def test_family_heading_and_website_title(client):
     assert "<title>Mama Martha</title>" in html
     assert '<meta property="og:title" content="Mama Martha">' in html
     assert '<span class="label">Forever in our hearts</span>' in html
+
+
+async def test_static_urls_change_when_files_change(tmp_path):
+    from app.main import static_fingerprint
+
+    (tmp_path / "site.css").write_text("body{}")
+    first = static_fingerprint(tmp_path)
+    (tmp_path / "site.css").write_text("body{color:red}")
+    assert static_fingerprint(tmp_path) != first
+
+
+async def test_paintings_exist_for_every_scheme(client):
+    from app.main import templates
+
+    for key, _ in templates.env.globals["palettes"]:
+        r = await client.get(f"/static/art/{key}.webp")
+        assert r.status_code == 200 and r.headers["content-type"] == "image/webp"
