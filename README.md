@@ -17,6 +17,8 @@ and light candles. It is a place of remembrance only: no money is collected.
 
 Read [docs/architecture.md](docs/architecture.md) for how the pieces fit, [docs/security.md](docs/security.md)
 for the protections, and [docs/runbook.md](docs/runbook.md) for day-to-day operation.
+[docs/learning-lab.md](docs/learning-lab.md) has hands-on exercises: scaling, failures, health checks,
+tracing, and how each maps to Kubernetes.
 
 ## Run it on your computer
 

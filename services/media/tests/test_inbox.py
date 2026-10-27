@@ -25,7 +25,7 @@ async def test_shared_photos_wait_for_review(client, tmp_path):
     (tmp_path / ".partial-upload.jpg").write_bytes(b"still arriving")
 
     assert await inbox.import_once(app) == 2
-    assert sorted(p.name for p in tmp_path.iterdir()) == [".failed", ".partial-upload.jpg"]
+    assert sorted(p.name for p in tmp_path.iterdir()) == [".claimed", ".failed", ".partial-upload.jpg"]
     assert [p.name for p in (tmp_path / ".failed").iterdir()] == ["notes.txt"]
 
     assert (await client.get("/api/media/review")).status_code == 401
@@ -65,3 +65,21 @@ def test_captions_from_file_names():
     for camera in ["IMG_2041.JPG", "WhatsApp Image 2026-10-27 at 13.45.58.jpeg", "PXL_20240101_123456789.jpg",
                    "20240101_101010.jpg", "DSC01234.JPG", "photo.jpg"]:  # fmt: skip
         assert c(camera) == ""
+
+
+async def test_two_copies_of_the_service_import_each_photo_once(client, tmp_path):
+    import asyncio
+
+    from app import inbox
+    from app.main import app
+
+    app.state.settings.inbox_dir = str(tmp_path)
+    for i in range(12):
+        (tmp_path / f"reunion {i:02d}.jpg").write_bytes(jpeg((i * 20, 40, 200 - i * 10)))
+
+    # Two importers working on the same folder at the same time, as with --scale media=2.
+    first, second = await asyncio.gather(inbox.import_once(app), inbox.import_once(app))
+    assert first + second == 12
+    assert not (tmp_path / ".failed").exists()
+    assert [p.name for p in tmp_path.iterdir() if p.name != ".claimed"] == []
+    assert list((tmp_path / ".claimed").iterdir()) == []

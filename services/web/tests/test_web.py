@@ -182,3 +182,18 @@ async def test_paintings_exist_for_every_scheme(client):
     for key, _ in templates.env.globals["palettes"]:
         r = await client.get(f"/static/art/{key}.webp")
         assert r.status_code == 200 and r.headers["content-type"] == "image/webp"
+
+
+@respx.mock
+async def test_request_id_is_passed_to_the_memorial_service(client):
+    from app.main import app
+
+    app.state.content._cache = None
+    story = respx.get("http://memorial.internal/api/memorial/story").mock(return_value=httpx.Response(200, json=STORY))
+    respx.get("http://memorial.internal/api/memorial/tributes").mock(return_value=httpx.Response(200, json=[]))
+    respx.get("http://memorial.internal/api/memorial/candles").mock(
+        return_value=httpx.Response(200, json={"count": 0, "candles": []})
+    )
+    r = await client.get("/", headers={"X-Request-ID": "trace-123"})
+    assert r.headers["x-request-id"] == "trace-123"
+    assert story.calls.last.request.headers["x-request-id"] == "trace-123"

@@ -1,3 +1,4 @@
+
 # Public gateway. Automatic HTTPS (Let's Encrypt) for {$SITE_ADDRESS}.
 {
 	email {$ACME_EMAIL:admin@example.com}
@@ -8,6 +9,22 @@
 		# who the real visitor is. Otherwise this is loopback, which never sends requests, so nobody is trusted.
 		trusted_proxies static {$CADDY_TRUSTED_PROXIES:127.0.0.1/32}
 		client_ip_headers CF-Connecting-IP
+	}
+}
+
+# Every copy of a service (docker compose up --scale web=3) gets a share of the requests:
+# the service name is looked up again every few seconds, requests rotate between the copies,
+# and a copy that stops answering is skipped for a while.
+(upstream) {
+	reverse_proxy {
+		dynamic a {args[0]} 8000 {
+			refresh 5s
+		}
+		lb_policy round_robin
+		lb_try_duration 10s
+		fail_duration 10s
+		header_up X-Request-ID {http.request.uuid}
+		header_up X-Real-IP {client_ip}
 	}
 }
 
@@ -44,36 +61,20 @@
 		}
 
 		handle /api/auth/* {
-			reverse_proxy auth:8000 {
-				lb_try_duration 10s
-				header_up X-Request-ID {http.request.uuid}
-				header_up X-Real-IP {client_ip}
-			}
+			import upstream auth
 		}
 		handle /api/memorial/* {
-			reverse_proxy memorial:8000 {
-				lb_try_duration 10s
-				header_up X-Request-ID {http.request.uuid}
-				header_up X-Real-IP {client_ip}
-			}
+			import upstream memorial
 		}
 		handle /api/media/* {
-			reverse_proxy media:8000 {
-				lb_try_duration 10s
-				header_up X-Request-ID {http.request.uuid}
-				header_up X-Real-IP {client_ip}
-			}
+			import upstream media
 		}
 		handle /static/* {
 			header Cache-Control "public, max-age=604800"
-			reverse_proxy web:8000
+			import upstream web
 		}
 		handle {
-			reverse_proxy web:8000 {
-				lb_try_duration 10s
-				header_up X-Request-ID {http.request.uuid}
-				header_up X-Real-IP {client_ip}
-			}
+			import upstream web
 		}
 	}
 

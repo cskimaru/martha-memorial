@@ -13,6 +13,8 @@ from dataclasses import dataclass, field
 
 import httpx
 
+from memorial_common.logging import request_id_var
+
 from .config import Settings
 
 log = logging.getLogger("content")
@@ -38,7 +40,9 @@ class ContentClient:
         await self.http.aclose()
 
     async def _get(self, url: str, headers: dict) -> dict | list:
-        r = await self.http.get(url, headers=headers)
+        # Pass the visitor's request ID on, so one page view can be followed through every service's logs.
+        rid = request_id_var.get()
+        r = await self.http.get(url, headers={**headers, "X-Request-ID": rid} if rid else headers)
         r.raise_for_status()
         return r.json()
 

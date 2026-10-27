@@ -3,6 +3,7 @@
 #   ./scripts/share.sh          start, or update after `git pull` (keeps the current link)
 #   ./scripts/share.sh new      start with a fresh quick link
 #   ./scripts/share.sh stop     stop everything (data is kept)
+#   SCALE="web=3" ./scripts/share.sh   run three copies of the web service (see docs/learning-lab.md)
 # With CLOUDFLARE_TUNNEL_TOKEN and PUBLIC_HOSTNAME set in .env, the link is your own permanent address.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -60,7 +61,9 @@ echo "Building the memorial (the first time this takes several minutes)..."
 # Plain progress: the animated display needs a console and fails on some Docker Desktop versions.
 PUBLIC_URL="$url" compose build web auth memorial media backup
 echo "Starting the memorial..."
-PUBLIC_URL="$url" compose up -d --no-build --wait "${APP[@]}"
+# Several copies of a service, for example: make share SCALE="web=3 media=2" (plain 'make share' goes back to one).
+scale=(); for x in ${SCALE:-}; do scale+=(--scale "$x"); done
+PUBLIC_URL="$url" compose up -d --no-build --wait "${scale[@]}" "${APP[@]}"
 
 echo
 echo "The memorial is shared at:  $url"
