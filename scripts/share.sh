@@ -30,7 +30,11 @@ if [ -n "$token" ] && [ -n "$host" ]; then
   url="https://$host"
   export TUNNEL_COMMAND="tunnel --no-autoupdate run" CLOUDFLARE_TUNNEL_TOKEN="$token"
   echo "Connecting $url ..."
-  PUBLIC_URL="$url" compose up -d cloudflared >/dev/null
+  if ! out=$(PUBLIC_URL="$url" compose up -d cloudflared 2>&1); then
+    echo "$out" >&2
+    echo "Couldn't start the tunnel connector (details above)." >&2
+    exit 1
+  fi
 else
   # Free quick tunnel. Reuse the running one so the link stays the same across updates.
   current() { PUBLIC_URL=pending compose logs cloudflared 2>&1 | grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' | tail -1 || true; }
@@ -41,7 +45,11 @@ else
   fi
   if [ -z "$url" ]; then
     echo "Opening a new tunnel..."
-    PUBLIC_URL=pending compose up -d --force-recreate cloudflared >/dev/null
+    if ! out=$(PUBLIC_URL=pending compose up -d --force-recreate cloudflared 2>&1); then
+      echo "$out" >&2
+      echo "Couldn't start the tunnel connector (details above)." >&2
+      exit 1
+    fi
     for _ in $(seq 60); do
       url=$(current)
       [ -n "$url" ] && break
